@@ -4,11 +4,13 @@ import android.Manifest
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.Menu
 import android.widget.EditText
 import android.widget.ImageView
@@ -111,6 +113,14 @@ class MainActivity : AppCompatActivity() {
                     //get the recognized text
                     val recognizedText = text.text
                     //set the recognized text to edit text
+                   /* val strl = recognizedText.split("\n").toTypedArray()
+                    for(x in strl) {
+                        if (x.contains("Rs")) {
+                            recognizedTextEt.setText(x)
+                        }
+                    }*/
+                    //Log.i(TAG,recognizedText)
+
                     recognizedTextEt.setText(recognizedText)
 
             }
@@ -153,7 +163,6 @@ class MainActivity : AppCompatActivity() {
                 else{
                     requestCameraPermissions()
                 }
-
             }
             else if(id == 2){
                 //Gallery is clicked, check if storage permissions are granted or not
@@ -283,7 +292,6 @@ class MainActivity : AppCompatActivity() {
                         showToast("Storage permission is required")
                     }
                 }
-
             }
         }
     }
