@@ -26,6 +26,8 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
+import kotlin.math.sqrt
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var inputImageBtn:MaterialButton
@@ -112,18 +114,47 @@ class MainActivity : AppCompatActivity() {
                     progressDialog.dismiss()
                     //get the recognized text
                     val recognizedText = text.text
-                    //set the recognized text to edit text
-                   /* val strl = recognizedText.split("\n").toTypedArray()
-                    for(x in strl) {
-                        if (x.contains("Rs")) {
-                            recognizedTextEt.setText(x)
+                    var finalEle = " "
+                    var maxSize : Double = 0.0
+                    for(block in text.textBlocks){
+                        for(line in block.lines){
+                            for(element in line.elements){
+                                var size : Double = 0.0
+                                var corners = element.cornerPoints
+                                if (corners != null && corners.size == 4) {
+                                    var dx = (corners[0].x - corners[1].x).toDouble()
+                                    var dy = (corners[0].y - corners[1].y).toDouble()
+                                    var len = sqrt(dx*dx + dy*dy)
+                                    var dx2 = (corners[2].x - corners[3].x).toDouble()
+                                    var dy2 = (corners[2].y - corners[3].y).toDouble()
+                                    var bred = sqrt(dx2*dx2 + dy2*dy2)
+                                    size = 2*(len+bred)
+                                }
+                                if(size > maxSize) {
+                                    maxSize = size
+                                    //finalEle = element.text biggest element
+                                    finalEle = block.text //block corresponding to the biggest element
+                                }
+//                                if(points!=null) {
+//                                    z = z + "\n" + points
+//                                }
+                            }
                         }
-                    }*/
+                       }
+                    Log.i(TAG,recognizedText) //may have to remove
+                    recognizedTextEt.setText(finalEle) //Remove later
+                    //set the recognized text to edit text
+                    /* val strl = recognizedText.split("\n").toTypedArray()
+                     for(x in strl) {
+                         if (x.contains("Rs")) {
+                             recognizedTextEt.setText(x)
+                         }
+                     }*/
                     //Log.i(TAG,recognizedText)
 
-                    recognizedTextEt.setText(recognizedText)
+                    //recognizedTextEt.setText(recognizedText)
 
-            }
+                }
                 .addOnFailureListener { e->
                     //failed recognizing text from image, dismiss dialog, show reason in Toast
                     progressDialog.dismiss()
@@ -236,15 +267,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkStoragePermission(): Boolean{
 
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        //return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        return true
     }
 
     private fun checkCameraPermissions() : Boolean{
 
-        val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-
-        return cameraResult && storageResult
+//        val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+//        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+//
+//        return cameraResult && storageResult
+        return true
     }
 
     private fun requestStoragePermission(){
