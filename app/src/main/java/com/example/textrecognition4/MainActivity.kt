@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.ContentValues
-import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -19,19 +18,22 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
+import com.google.mlkit.vision.barcode.BarcodeScanner
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-
 import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var inputImageBtn:MaterialButton
     private lateinit var recognizeTextBtn:MaterialButton
+    private lateinit var barcodeBtn:MaterialButton
     private lateinit var imageIv:ImageView
     private lateinit var recognizedTextEt : EditText
 
@@ -42,10 +44,15 @@ class MainActivity : AppCompatActivity() {
 
         private const val CAMERA_REQUEST_CODE = 100
         private const val STORAGE_REQUEST_CODE = 101
+
+        private const val TAG = "MAIN_TAG"
     }
 
     //uri of the image that we will take from camera/gallery
     private var imageUri: Uri? = null
+
+    private var barcodeScannerOptions: BarcodeScannerOptions? = null
+    private var barcodeScanner: BarcodeScanner?= null
 
     private lateinit var cameraPermissions: Array<String>
     private lateinit var storagePermissions: Array<String>
@@ -61,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         //init UI views
         inputImageBtn = findViewById(R.id.inputImageBtn)
         recognizeTextBtn = findViewById(R.id.recognizeTextBtn)
+        barcodeBtn = findViewById(R.id.barcodeBtn)
         imageIv = findViewById(R.id.imageIv)
         recognizedTextEt = findViewById(R.id.recognizedTextEt)
 
@@ -75,7 +83,11 @@ class MainActivity : AppCompatActivity() {
         //handle click, show input image dialog
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
+        barcodeScannerOptions = BarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+            .build()
 
+        barcodeScanner = BarcodeScanning.getClient(barcodeScannerOptions!!)
 
         //handle click, show input image dialog
 
@@ -92,6 +104,65 @@ class MainActivity : AppCompatActivity() {
                 recognizeTextFromImage()
             }
         }
+
+        barcodeBtn.setOnClickListener {
+            if(imageUri == null)
+            {
+                showToast("Pick Image first")
+            }
+            else{
+                detectResultFromImage()
+            }
+        }
+
+    }
+
+    private fun detectResultFromImage(){
+        Log.d(TAG, "detectResultFromImage: ")
+        try{
+            val inputImage = InputImage.fromFilePath(this, imageUri!!)
+
+            val barcodeResult = barcodeScanner!!.process(inputImage)
+                .addOnSuccessListener{barcodes ->
+                    extractBarcodeInfo(barcodes)
+                }
+                .addOnFailureListener{e ->
+                    Log.e(TAG, "detectResultFromImage: ", e)
+                    showToast("Failed scanning due to ${e.message}")
+
+                }
+
+        }
+        catch (e: Exception){
+            Log.e(TAG, "detectResultFromImage: ", e)
+            showToast("Failed due to ${e.message}")
+        }
+    }
+
+    private fun extractBarcodeInfo(barcodes: List<Barcode>) {
+        for(barcode in barcodes)
+        {
+            val bound = barcode.boundingBox
+            val corners = barcode.cornerPoints
+            val rawValue = barcode.rawValue
+            Log.d(TAG, "extractBarcodeInfo: rawValue: $rawValue")
+            val valueType = barcode.valueType
+            when(valueType){
+                Barcode.TYPE_PRODUCT ->{
+                    rawValue?.let {
+                        // Fetch product details using the barcode
+                        getProductDetailsFromBarcode(it)
+                    }
+                }
+                else -> {
+                    Log.d(TAG, "extractBarcodeInfo: Unsupported barcode type")
+                }
+            }
+        }
+
+    }
+
+    private fun getProductDetailsFromBarcode(it: String) {
 
     }
 
@@ -229,6 +300,7 @@ class MainActivity : AppCompatActivity() {
             {
                 val data = result.data
                 imageUri = data!!.data
+                Log.d(TAG, "galleryActivityResultLauncher: imageUri: $imageUri ")
 
                 imageIv.setImageURI(imageUri)
             }
@@ -257,6 +329,9 @@ class MainActivity : AppCompatActivity() {
 
                 //image is taken from camera
                 //we already have the image in imageUri using function pickImageCamera
+                //imageIv.setImageURI(imageUri)
+                val data = result.data
+                Log.d(TAG, "cameraActivityResultLauncher: imageUri: $imageUri")
                 imageIv.setImageURI(imageUri)
             }
             else{

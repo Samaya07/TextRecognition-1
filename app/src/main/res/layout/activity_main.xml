@@ -16,8 +16,15 @@
             android:id="@+id/inputImageBtn"
             android:layout_width="match_parent"
             android:layout_weight="1"
-            app:icon="@drawable/baseline_add_a_photo_24"
             android:text="Take image"
+            android:layout_marginEnd="5dp"
+            android:layout_height="match_parent"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/barcodeBtn"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:text = "Barcode"
             android:layout_marginEnd="5dp"
             android:layout_height="match_parent"/>
 
@@ -25,10 +32,11 @@
             android:id="@+id/recognizeTextBtn"
             android:layout_width="match_parent"
             android:layout_weight="1"
-            app:icon="@drawable/baseline_document_scanner_24"
             android:text = "Recognize text"
             android:layout_marginEnd="5dp"
             android:layout_height="match_parent"/>
+
+
     </LinearLayout>
 
     <ScrollView
