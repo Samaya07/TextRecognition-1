@@ -116,43 +116,46 @@ class MainActivity : AppCompatActivity() {
                     val recognizedText = text.text
                     var finalEle = " "
                     var maxSize : Double = 0.0
-                    for(block in text.textBlocks){
-                        for(line in block.lines){
-                            for(element in line.elements){
-                                var size : Double = 0.0
-                                var corners = element.cornerPoints
-                                if (corners != null && corners.size == 4) {
-                                    var dx = (corners[0].x - corners[1].x).toDouble()
-                                    var dy = (corners[0].y - corners[1].y).toDouble()
-                                    var len = sqrt(dx*dx + dy*dy)
-                                    var dx2 = (corners[2].x - corners[3].x).toDouble()
-                                    var dy2 = (corners[2].y - corners[3].y).toDouble()
-                                    var bred = sqrt(dx2*dx2 + dy2*dy2)
-                                    size = 2*(len+bred)
-                                }
-                                if(size > maxSize) {
-                                    maxSize = size
-                                    //finalEle = element.text biggest element
-                                    finalEle = block.text //block corresponding to the biggest element
-                                }
+                    var flag = 0
+                    //set the recognized text to edit text
+                    val strl = recognizedText.split("\n").toTypedArray()
+                    for(x in strl) {
+                        if (x.contains("Rs") or x.contains("MRP")) {
+                            flag = 1
+                            finalEle = x
+                        }
+                    }
+                    if (flag == 0) {
+                        for (block in text.textBlocks) {
+                            for (line in block.lines) {
+                                for (element in line.elements) {
+                                    var size: Double = 0.0
+                                    var corners = element.cornerPoints
+                                    if (corners != null && corners.size == 4) {
+                                        var dx = (corners[0].x - corners[1].x).toDouble()
+                                        var dy = (corners[0].y - corners[1].y).toDouble()
+                                        var len = sqrt(dx * dx + dy * dy)
+                                        var dx2 = (corners[2].x - corners[3].x).toDouble()
+                                        var dy2 = (corners[2].y - corners[3].y).toDouble()
+                                        var bred = sqrt(dx2 * dx2 + dy2 * dy2)
+                                        size = 2 * (len + bred)
+                                    }
+                                    if (size > maxSize) {
+                                        maxSize = size
+                                        //finalEle = element.text biggest element
+                                        finalEle =
+                                            block.text //block corresponding to the biggest element
+                                    }
 //                                if(points!=null) {
 //                                    z = z + "\n" + points
 //                                }
+                                }
                             }
                         }
-                       }
-                    Log.i(TAG,recognizedText) //may have to remove
+                    }
+                    //Log.i(TAG,recognizedText) //may have to remove
                     recognizedTextEt.setText(finalEle) //Remove later
-                    //set the recognized text to edit text
-                    /* val strl = recognizedText.split("\n").toTypedArray()
-                     for(x in strl) {
-                         if (x.contains("Rs")) {
-                             recognizedTextEt.setText(x)
-                         }
-                     }*/
-                    //Log.i(TAG,recognizedText)
 
-                    //recognizedTextEt.setText(recognizedText)
 
                 }
                 .addOnFailureListener { e->
