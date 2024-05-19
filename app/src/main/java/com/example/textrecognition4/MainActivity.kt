@@ -18,7 +18,10 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.example.textrecognition4.api.ProductResponse
 import com.google.android.material.button.MaterialButton
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -27,6 +30,12 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.io.IOException
 import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity() {
@@ -39,13 +48,14 @@ class MainActivity : AppCompatActivity() {
 
 
 
-
     private companion object {
 
         private const val CAMERA_REQUEST_CODE = 100
         private const val STORAGE_REQUEST_CODE = 101
 
         private const val TAG = "MAIN_TAG"
+
+       private const val API_KEY = "YOUR_API_KEY"
     }
 
     //uri of the image that we will take from camera/gallery
@@ -162,9 +172,54 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun getProductDetailsFromBarcode(it: String) {
+//    private fun getProductDetailsFromBarcode(it: String) {
+//        recognizedTextEt.setText(it)
+//    }
 
+    private fun getProductDetailsFromBarcode(barcode: String) {
+        val apiKey = "tsd5egbrsx67fm64kok3vyt8vl0dot"
+        val url = "https://api.barcodelookup.com/v3/products?barcode=$barcode&key=$apiKey"
+
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        val client = OkHttpClient()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                val responseBody = response.body?.string()
+                if (response.isSuccessful && !responseBody.isNullOrBlank()) {
+                    try {
+                        val productResponse = Gson().fromJson(responseBody, ProductResponse::class.java)
+                        if (productResponse.products.isNotEmpty()) {
+                            val product = productResponse.products[0]
+                            val productName = product.title
+                            val productPrice = product.stores?.firstOrNull()?.price
+
+                            runOnUiThread {
+                                val productInfo = "Name: $productName\nPrice: $productPrice"
+                                recognizedTextEt.setText(productInfo)
+                            }
+                        } else {
+                            showToast("No product found for this barcode")
+                        }
+                    } catch (e: JsonSyntaxException) {
+                        e.printStackTrace()
+                        showToast("Failed to parse product details")
+                    }
+                } else {
+                    showToast("Failed to retrieve product details")
+                }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+                showToast("API call failed: ${e.message}")
+            }
+        })
     }
+
 
     private fun recognizeTextFromImage() {
 
