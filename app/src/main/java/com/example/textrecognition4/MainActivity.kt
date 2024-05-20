@@ -19,7 +19,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -54,7 +53,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var  progressDialog: ProgressDialog
 
     private lateinit var textRecognizer: TextRecognizer
-    //private lateinit var textRecognizer2: TextRecognizer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,8 +65,8 @@ class MainActivity : AppCompatActivity() {
         recognizedTextEt = findViewById(R.id.recognizedTextEt)
 
         //init arrays of permissions required for camera,gallery
-        cameraPermissions = arrayOf(android.Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        storagePermissions = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        storagePermissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Please wait")
@@ -77,8 +75,6 @@ class MainActivity : AppCompatActivity() {
         //handle click, show input image dialog
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
-       // textRecognizer2 = TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
-       // textRecognizer = TextRecognition.getClient(TextR)
 
 
 
@@ -113,69 +109,78 @@ class MainActivity : AppCompatActivity() {
             progressDialog.setMessage("Recognizing text")
 
             //start text recognition process from image
-            val textTaskResult = textRecognizer.process(inputImage)
+             val testTaskResult = textRecognizer.process(inputImage)
                 .addOnSuccessListener {text ->
                     //process completed, dismiss dialog
                     progressDialog.dismiss()
                     //get the recognized text
                     val recognizedText = text.text
-                    var finalEle: String? = ""
-                    var maxSize : Double = 0.0
+                    var finalEle: String? = ""       // String with the filtered text
+                    var maxSize = 0.0
                     var flag = 0
                     var flag2 = 0
-                    //splitting each line in the recognizedText
-                    //val strl = recognizedText.split("\n").toTypedArray()
-                    val pattern = Regex("\\d+\\.?\\d*")
-                    for(block in text.textBlocks){
-                        if(block.text.contains("Rs") or block.text.contains("MRP") or block.text.contains("M.R.P"))
+                    val pattern = Regex("\\d+\\.?\\d*")   //Pattern to recognize price format
+                    val arrayOfText = recognizedText.split("\n").toTypedArray()  //The recognized text into an array
+                    for(x in arrayOfText) {
+                        if (x.contains("Rs") or x.contains("MRP")
+                            or x.contains("M.R.P") or x.contains("\u20B9")) {
+                            flag = 1
+                            //Log.i(TAG, x)
+                            val match = pattern.find(x)
+                            val value = match?.value
+                            finalEle = value
+                            if(finalEle == null) {flag2 = 1}
+                            else {break}
+                        }
+                        //Log.i(TAG,x)
+                        if(pattern.matches(x) && flag2==1)  //Searching for price format in
+                        {                                            // the vicinity of MRP or Rs tags
+                            val match = pattern.find(x)
+                            val value = match?.value
+                            finalEle = value
+                            //Log.i(TAG,"here")
+                            break
+                        }
+                    }
+                    /*for(block in text.textBlocks){
+                        if(block.text.contains("Rs") or block.text.contains("MRP")
+                            or block.text.contains("M.R.P") or block.text.contains("\u20B9"))
                         {
-                            //finalEle = block.text
                             flag = 1
                             Log.i(TAG, block.text)
+                            Log.i(TAG,"---")
                             val match = pattern.find(block.text)
                             val value = match?.value
                             finalEle = value
-                            /*if(pattern.matches(block.text)){
-                                val match = pattern.find(block.text)
-                                val value = match?.value
-                                finalEle = value
-                                break
-                            }*/
                             if(finalEle == null) {flag2 = 1}
                             else {break}
 
                         }
                         Log.i(TAG,block.text)
-                        if(pattern.matches(block.text) && flag2==1)
-                        {
+                        if(pattern.matches(block.text) && flag2==1)  //Searching for price format in
+                        {                                            // the vicinity of MRP or Rs tags
                             val match = pattern.find(block.text)
                             val value = match?.value
                             finalEle = value
                             Log.i(TAG,"here")
                             break
                         }
-                    }
-                   /* for(x in strl) {
-                        if (x.contains("Rs") or x.contains("MRP") or x.contains("M.R.P") or x.contains("\u20B9")) {
-                            flag = 1
-                            //val match = pattern.find(x)
-                            //val value = match?.value
-                            finalEle = x
-                        }
                     }*/
+
                     if (flag == 0) {
+                        Log.i(TAG,"title")
                         for (block in text.textBlocks) {
                             for (line in block.lines) {
                                 for (element in line.elements) {
-                                    var size: Double = 0.0
-                                    var corners = element.cornerPoints
+                                    var size = 0.0
+                                    val corners = element.cornerPoints
                                     if (corners != null && corners.size == 4) {
-                                        var dx = (corners[0].x - corners[1].x).toDouble()
-                                        var dy = (corners[0].y - corners[1].y).toDouble()
-                                        var len = sqrt(dx * dx + dy * dy)
-                                        var dx2 = (corners[2].x - corners[3].x).toDouble()
-                                        var dy2 = (corners[2].y - corners[3].y).toDouble()
-                                        var bred = sqrt(dx2 * dx2 + dy2 * dy2)
+                                        val dx = (corners[0].x - corners[1].x).toDouble()
+                                        val dy = (corners[0].y - corners[1].y).toDouble()
+                                        val len = sqrt(dx * dx + dy * dy)
+                                        val dx2 = (corners[2].x - corners[3].x).toDouble()
+                                        val dy2 = (corners[2].y - corners[3].y).toDouble()
+                                        val bred = sqrt(dx2 * dx2 + dy2 * dy2)
                                         size = 2 * (len + bred)
                                     }
                                     if (size > maxSize) {
@@ -184,9 +189,6 @@ class MainActivity : AppCompatActivity() {
                                         finalEle =
                                             block.text //block corresponding to the biggest element
                                     }
-//                                if(points!=null) {
-//                                    z = z + "\n" + points
-//                                }
                                 }
                             }
                         }
@@ -206,7 +208,7 @@ class MainActivity : AppCompatActivity() {
 
         }
         catch(e:Exception){
-            //Exception occured while preparing InputImage, dismiss dialog, show reason in Toast
+            //Exception occurred while preparing InputImage, dismiss dialog, show reason in Toast
             progressDialog.dismiss()
             showToast("Failed to prepare image due to ${e.message}")
         }
