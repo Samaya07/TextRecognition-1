@@ -24,6 +24,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 import kotlin.math.sqrt
@@ -53,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var  progressDialog: ProgressDialog
 
     private lateinit var textRecognizer: TextRecognizer
+    //private lateinit var textRecognizer2: TextRecognizer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +76,9 @@ class MainActivity : AppCompatActivity() {
 
         //handle click, show input image dialog
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
+       // textRecognizer2 = TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
+       // textRecognizer = TextRecognition.getClient(TextR)
 
 
 
@@ -114,17 +119,50 @@ class MainActivity : AppCompatActivity() {
                     progressDialog.dismiss()
                     //get the recognized text
                     val recognizedText = text.text
-                    var finalEle = " "
+                    var finalEle: String? = ""
                     var maxSize : Double = 0.0
                     var flag = 0
-                    //set the recognized text to edit text
-                    val strl = recognizedText.split("\n").toTypedArray()
-                    for(x in strl) {
-                        if (x.contains("Rs") or x.contains("MRP")) {
+                    var flag2 = 0
+                    //splitting each line in the recognizedText
+                    //val strl = recognizedText.split("\n").toTypedArray()
+                    val pattern = Regex("\\d+\\.?\\d*")
+                    for(block in text.textBlocks){
+                        if(block.text.contains("Rs") or block.text.contains("MRP") or block.text.contains("M.R.P"))
+                        {
+                            //finalEle = block.text
                             flag = 1
-                            finalEle = x
+                            Log.i(TAG, block.text)
+                            val match = pattern.find(block.text)
+                            val value = match?.value
+                            finalEle = value
+                            /*if(pattern.matches(block.text)){
+                                val match = pattern.find(block.text)
+                                val value = match?.value
+                                finalEle = value
+                                break
+                            }*/
+                            if(finalEle == null) {flag2 = 1}
+                            else {break}
+
+                        }
+                        Log.i(TAG,block.text)
+                        if(pattern.matches(block.text) && flag2==1)
+                        {
+                            val match = pattern.find(block.text)
+                            val value = match?.value
+                            finalEle = value
+                            Log.i(TAG,"here")
+                            break
                         }
                     }
+                   /* for(x in strl) {
+                        if (x.contains("Rs") or x.contains("MRP") or x.contains("M.R.P") or x.contains("\u20B9")) {
+                            flag = 1
+                            //val match = pattern.find(x)
+                            //val value = match?.value
+                            finalEle = x
+                        }
+                    }*/
                     if (flag == 0) {
                         for (block in text.textBlocks) {
                             for (line in block.lines) {
@@ -155,6 +193,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     //Log.i(TAG,recognizedText) //may have to remove
                     recognizedTextEt.setText(finalEle) //Remove later
+                    Log.i(TAG, finalEle.toString())
+                    //recognizedTextEt.setText(recognizedText)
 
 
                 }

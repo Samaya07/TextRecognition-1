@@ -19,6 +19,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TextRecognition4"
         tools:targetApi="31">
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr,ocr_devanagari"/>
+        <!-- To use multiple models: android:value="ocr,ocr_chinese,ocr_devanagari,ocr_japanese,ocr_korean,..." -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
