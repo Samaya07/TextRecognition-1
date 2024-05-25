@@ -37,7 +37,6 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
 import kotlin.math.sqrt
-
 class MainActivity : AppCompatActivity() {
 
     private lateinit var inputImageBtn:MaterialButton
@@ -55,7 +54,7 @@ class MainActivity : AppCompatActivity() {
 
         private const val TAG = "MAIN_TAG"
 
-       private const val API_KEY = "YOUR_API_KEY"
+        private const val API_KEY = "YOUR_API_KEY"
     }
 
     //uri of the image that we will take from camera/gallery
@@ -220,7 +219,6 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-
     private fun recognizeTextFromImage() {
 
         //set message and show progress dialog
@@ -266,7 +264,34 @@ class MainActivity : AppCompatActivity() {
 //                                }
                             }
                         }
-                       }
+                    }
+//                    data class BlockSize(val size: Double, val block: String)
+//
+//                    val blockSizes = mutableListOf<BlockSize>()
+//
+//                    for (block in text.textBlocks) {
+//                        for (line in block.lines) {
+//                            for (element in line.elements) {
+//                                var size: Double = 0.0
+//                                val corners = element.cornerPoints
+//                                if (corners != null && corners.size == 4) {
+//                                    val dx1 = (corners[0].x - corners[1].x).toDouble()
+//                                    val dy1 = (corners[0].y - corners[1].y).toDouble()
+//                                    val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
+//                                    val dx2 = (corners[2].x - corners[3].x).toDouble()
+//                                    val dy2 = (corners[2].y - corners[3].y).toDouble()
+//                                    val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
+//                                    size = 2 * (len1 + len2)
+//                                }
+//                                blockSizes.add(BlockSize(size, block.text))
+//                            }
+//                        }
+//                    }
+//                    val top3Blocks:List<String> = blockSizes.sortedByDescending { it.size }.take(3).map { it.block }
+//                    top3Blocks.forEach { blockText ->
+//                        finalEle = finalEle + "\n" + blockText
+//                    }
+
                     Log.i(TAG,recognizedText) //may have to remove
                     recognizedTextEt.setText(finalEle) //Remove later
                     //set the recognized text to edit text
@@ -294,6 +319,7 @@ class MainActivity : AppCompatActivity() {
             showToast("Failed to prepare image due to ${e.message}")
         }
     }
+
 
     private fun showInputImageDialog() {
 
