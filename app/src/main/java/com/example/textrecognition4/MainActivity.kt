@@ -1,4 +1,4 @@
-package com.example.textrecognition4
+        package com.example.textrecognition4
 
 import android.Manifest
 import android.app.Activity
@@ -19,11 +19,12 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.text.isDigitsOnly
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
-import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
+//import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 import kotlin.math.sqrt
@@ -74,7 +75,7 @@ class MainActivity : AppCompatActivity() {
 
         //handle click, show input image dialog
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
+       //textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
 
 
 
@@ -109,95 +110,102 @@ class MainActivity : AppCompatActivity() {
             progressDialog.setMessage("Recognizing text")
 
             //start text recognition process from image
-             val testTaskResult = textRecognizer.process(inputImage)
+            val textTaskResult = textRecognizer.process(inputImage)
                 .addOnSuccessListener {text ->
                     //process completed, dismiss dialog
                     progressDialog.dismiss()
                     //get the recognized text
                     val recognizedText = text.text
-                    var finalEle: String? = ""       // String with the filtered text
-                    var maxSize = 0.0
-                    var flag = 0
-                    var flag2 = 0
-                    val pattern = Regex("\\d+\\.?\\d*")   //Pattern to recognize price format
-                    val arrayOfText = recognizedText.split("\n").toTypedArray()  //The recognized text into an array
-                    for(x in arrayOfText) {
-                        if (x.contains("Rs") or x.contains("MRP")
-                            or x.contains("M.R.P") or x.contains("\u20B9")) {
-                            flag = 1
-                            //Log.i(TAG, x)
-                            val match = pattern.find(x)
-                            val value = match?.value
-                            finalEle = value
-                            if(finalEle == null) {flag2 = 1}
-                            else {break}
-                        }
-                        //Log.i(TAG,x)
-                        if(pattern.matches(x) && flag2==1)  //Searching for price format in
-                        {                                            // the vicinity of MRP or Rs tags
-                            val match = pattern.find(x)
-                            val value = match?.value
-                            finalEle = value
-                            //Log.i(TAG,"here")
-                            break
-                        }
-                    }
-                    /*for(block in text.textBlocks){
-                        if(block.text.contains("Rs") or block.text.contains("MRP")
-                            or block.text.contains("M.R.P") or block.text.contains("\u20B9"))
-                        {
-                            flag = 1
-                            Log.i(TAG, block.text)
-                            Log.i(TAG,"---")
-                            val match = pattern.find(block.text)
-                            val value = match?.value
-                            finalEle = value
-                            if(finalEle == null) {flag2 = 1}
-                            else {break}
+                    var finalEle = " "
+                    var maxSize : Double = 0.0
 
-                        }
-                        Log.i(TAG,block.text)
-                        if(pattern.matches(block.text) && flag2==1)  //Searching for price format in
-                        {                                            // the vicinity of MRP or Rs tags
-                            val match = pattern.find(block.text)
-                            val value = match?.value
-                            finalEle = value
-                            Log.i(TAG,"here")
-                            break
-                        }
-                    }*/
+                    data class ElementSize(val size: Double, val element: String)
 
-                    if (flag == 0) {
-                        Log.i(TAG,"title")
-                        for (block in text.textBlocks) {
-                            for (line in block.lines) {
-                                for (element in line.elements) {
-                                    var size = 0.0
-                                    val corners = element.cornerPoints
-                                    if (corners != null && corners.size == 4) {
-                                        val dx = (corners[0].x - corners[1].x).toDouble()
-                                        val dy = (corners[0].y - corners[1].y).toDouble()
-                                        val len = sqrt(dx * dx + dy * dy)
-                                        val dx2 = (corners[2].x - corners[3].x).toDouble()
-                                        val dy2 = (corners[2].y - corners[3].y).toDouble()
-                                        val bred = sqrt(dx2 * dx2 + dy2 * dy2)
-                                        size = 2 * (len + bred)
-                                    }
-                                    if (size > maxSize) {
-                                        maxSize = size
-                                        //finalEle = element.text biggest element
-                                        finalEle =
-                                            block.text //block corresponding to the biggest element
-                                    }
+                    val ElementSizes = mutableListOf<ElementSize>()
+
+                    for (block in text.textBlocks) {
+                        for (line in block.lines) {
+                            for (element in line.elements) {
+                                var size: Double = 0.0
+                                val corners = element.cornerPoints
+                                if (corners != null && corners.size == 4) {
+                                    val dx1 = (corners[0].x-corners[3].x).toDouble()
+                                    val dy1 = (corners[0].y-corners[3].y).toDouble()
+                                    size = sqrt(dx1 * dx1 + dy1 * dy1)
+//                                    val dx2 = (corners[2].x-corners[3].x).toDouble()
+//                                    val dy2 = (corners[2].y-corners[3].y).toDouble()
+//                                    val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
                                 }
+                                ElementSizes.add(ElementSize(size, element.text))
                             }
                         }
                     }
-                    //Log.i(TAG,recognizedText) //may have to remove
+                    val top5Elements:List<String> = ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
+//                    top5Elements.forEach { elementText ->
+//                        finalEle = finalEle + "\n" + elementText
+//                    }
+//Score calculation
+                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+                    var score = 0.0
+                    var j =1.0
+                    val len = wordsArray.size
+                    val scoreArr = mutableListOf<Double>()
+                    for(i in wordsArray.indices){
+                        if(wordsArray[i].length > 3) {
+                            if(wordsArray[i].uppercase() == wordsArray[i]){
+                                score +=0.4
+                            }
+                            if (wordsArray[i].capitalize() == wordsArray[i]) {
+                                score += 0.3
+                            }
+                            if (i<(len/3)) {
+                                score += 0.2
+                            }
+                            else{
+                                if(i<(len*2/3)){
+                                    score+=0.25
+                                }
+                            }
+                        }
+                        scoreArr.add(score)
+                        score = 0.0
+                    }
+                    var adder = 0.6
+                    for(i in top5Elements.indices){
+                        for(j in wordsArray.indices){
+                            if(top5Elements[i] == wordsArray[j]){
+                                scoreArr[j] += adder
+                                adder -= 0.1
+                            }
+                        }
+                    }
+                    val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
+                    val max1 = wordsArray[i1]
+                    scoreArr[i1] = 0.0
+                    val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
+                    val max2 = wordsArray[i2]
+                    scoreArr[i2] = 0.0
+                    val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
+                    val max3 = wordsArray[i3]
+//                    finalEle = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ") +
+//                            "\n\n\n\n\n\n" +
+//                            top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    val scoredString = scoreArr.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    val top5elementsInString = top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+"Scored Array is"+"\n"+scoredString+"\n\n"+"Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+"Top 5 elements in size"+top5elementsInString
+                    Log.i(TAG,recognizedText) //may have to remove
                     recognizedTextEt.setText(finalEle) //Remove later
-                    Log.i(TAG, finalEle.toString())
-                    //recognizedTextEt.setText(recognizedText)
+                    //set the recognized text to edit text
+                    /* val strl = recognizedText.split("\n").toTypedArray()
+                     for(x in strl) {
+                         if (x.contains("Rs")) {
+                             recognizedTextEt.setText(x)
+                         }
+                     }*/
+                    //Log.i(TAG,recognizedText)
 
+                    //recognizedTextEt.setText(recognizedText)
 
                 }
                 .addOnFailureListener { e->
@@ -208,7 +216,7 @@ class MainActivity : AppCompatActivity() {
 
         }
         catch(e:Exception){
-            //Exception occurred while preparing InputImage, dismiss dialog, show reason in Toast
+            //Exception occured while preparing InputImage, dismiss dialog, show reason in Toast
             progressDialog.dismiss()
             showToast("Failed to prepare image due to ${e.message}")
         }
