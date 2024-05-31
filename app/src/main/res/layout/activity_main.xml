@@ -55,6 +55,7 @@
                 android:src="@drawable/baseline_image_24"
                 android:adjustViewBounds="true"/>
 
+
             <TextView
                 style="@style/TextAppearance.MaterialComponents.Headline6"
                 android:layout_width="match_parent"

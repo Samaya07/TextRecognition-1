@@ -1,9 +1,10 @@
-package com.example.textrecognition4
+        package com.example.textrecognition4
 
 import android.Manifest
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -18,32 +19,23 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.example.textrecognition4.api.ProductResponse
+import androidx.core.text.isDigitsOnly
 import com.google.android.material.button.MaterialButton
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import com.google.mlkit.vision.barcode.BarcodeScanner
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
+//import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import java.io.IOException
+
 import kotlin.math.sqrt
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var inputImageBtn:MaterialButton
     private lateinit var recognizeTextBtn:MaterialButton
-    private lateinit var barcodeBtn:MaterialButton
     private lateinit var imageIv:ImageView
     private lateinit var recognizedTextEt : EditText
+
 
 
 
@@ -51,17 +43,10 @@ class MainActivity : AppCompatActivity() {
 
         private const val CAMERA_REQUEST_CODE = 100
         private const val STORAGE_REQUEST_CODE = 101
-
-        private const val TAG = "MAIN_TAG"
-
-        private const val API_KEY = "YOUR_API_KEY"
     }
 
     //uri of the image that we will take from camera/gallery
     private var imageUri: Uri? = null
-
-    private var barcodeScannerOptions: BarcodeScannerOptions? = null
-    private var barcodeScanner: BarcodeScanner?= null
 
     private lateinit var cameraPermissions: Array<String>
     private lateinit var storagePermissions: Array<String>
@@ -77,13 +62,12 @@ class MainActivity : AppCompatActivity() {
         //init UI views
         inputImageBtn = findViewById(R.id.inputImageBtn)
         recognizeTextBtn = findViewById(R.id.recognizeTextBtn)
-        barcodeBtn = findViewById(R.id.barcodeBtn)
         imageIv = findViewById(R.id.imageIv)
         recognizedTextEt = findViewById(R.id.recognizedTextEt)
 
         //init arrays of permissions required for camera,gallery
-        cameraPermissions = arrayOf(android.Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        storagePermissions = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        storagePermissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Please wait")
@@ -91,12 +75,9 @@ class MainActivity : AppCompatActivity() {
 
         //handle click, show input image dialog
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+       //textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
 
-        barcodeScannerOptions = BarcodeScannerOptions.Builder()
-            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-            .build()
 
-        barcodeScanner = BarcodeScanning.getClient(barcodeScannerOptions!!)
 
         //handle click, show input image dialog
 
@@ -114,109 +95,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        barcodeBtn.setOnClickListener {
-            if(imageUri == null)
-            {
-                showToast("Pick Image first")
-            }
-            else{
-                detectResultFromImage()
-            }
-        }
-
-    }
-
-    private fun detectResultFromImage(){
-        Log.d(TAG, "detectResultFromImage: ")
-        try{
-            val inputImage = InputImage.fromFilePath(this, imageUri!!)
-
-            val barcodeResult = barcodeScanner!!.process(inputImage)
-                .addOnSuccessListener{barcodes ->
-                    extractBarcodeInfo(barcodes)
-                }
-                .addOnFailureListener{e ->
-                    Log.e(TAG, "detectResultFromImage: ", e)
-                    showToast("Failed scanning due to ${e.message}")
-
-                }
-
-        }
-        catch (e: Exception){
-            Log.e(TAG, "detectResultFromImage: ", e)
-            showToast("Failed due to ${e.message}")
-        }
-    }
-
-    private fun extractBarcodeInfo(barcodes: List<Barcode>) {
-        for(barcode in barcodes)
-        {
-            val bound = barcode.boundingBox
-            val corners = barcode.cornerPoints
-            val rawValue = barcode.rawValue
-            Log.d(TAG, "extractBarcodeInfo: rawValue: $rawValue")
-            val valueType = barcode.valueType
-            when(valueType){
-                Barcode.TYPE_PRODUCT ->{
-                    rawValue?.let {
-                        // Fetch product details using the barcode
-                        getProductDetailsFromBarcode(it)
-                    }
-                }
-                else -> {
-                    Log.d(TAG, "extractBarcodeInfo: Unsupported barcode type")
-                }
-            }
-        }
-
-    }
-
-//    private fun getProductDetailsFromBarcode(it: String) {
-//        recognizedTextEt.setText(it)
-//    }
-
-    private fun getProductDetailsFromBarcode(barcode: String) {
-        val apiKey = "tsd5egbrsx67fm64kok3vyt8vl0dot"
-        val url = "https://api.barcodelookup.com/v3/products?barcode=$barcode&key=$apiKey"
-
-        val request = Request.Builder()
-            .url(url)
-            .build()
-
-        val client = OkHttpClient()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onResponse(call: Call, response: Response) {
-                val responseBody = response.body?.string()
-                if (response.isSuccessful && !responseBody.isNullOrBlank()) {
-                    try {
-                        val productResponse = Gson().fromJson(responseBody, ProductResponse::class.java)
-                        if (productResponse.products.isNotEmpty()) {
-                            val product = productResponse.products[0]
-                            val productName = product.title
-                            val productPrice = product.stores?.firstOrNull()?.price
-
-                            runOnUiThread {
-                                val productInfo = "Name: $productName\nPrice: $productPrice"
-                                recognizedTextEt.setText(productInfo)
-                            }
-                        } else {
-                            showToast("No product found for this barcode")
-                        }
-                    } catch (e: JsonSyntaxException) {
-                        e.printStackTrace()
-                        showToast("Failed to parse product details")
-                    }
-                } else {
-                    showToast("Failed to retrieve product details")
-                }
-            }
-
-            override fun onFailure(call: Call, e: IOException) {
-                e.printStackTrace()
-                showToast("API call failed: ${e.message}")
-            }
-        })
     }
 
     private fun recognizeTextFromImage() {
@@ -240,58 +118,82 @@ class MainActivity : AppCompatActivity() {
                     val recognizedText = text.text
                     var finalEle = " "
                     var maxSize : Double = 0.0
-                    for(block in text.textBlocks){
-                        for(line in block.lines){
-                            for(element in line.elements){
-                                var size : Double = 0.0
-                                var corners = element.cornerPoints
+
+                    data class ElementSize(val size: Double, val element: String)
+
+                    val ElementSizes = mutableListOf<ElementSize>()
+
+                    for (block in text.textBlocks) {
+                        for (line in block.lines) {
+                            for (element in line.elements) {
+                                var size: Double = 0.0
+                                val corners = element.cornerPoints
                                 if (corners != null && corners.size == 4) {
-                                    var dx = (corners[0].x - corners[1].x).toDouble()
-                                    var dy = (corners[0].y - corners[1].y).toDouble()
-                                    var len = sqrt(dx*dx + dy*dy)
-                                    var dx2 = (corners[2].x - corners[3].x).toDouble()
-                                    var dy2 = (corners[2].y - corners[3].y).toDouble()
-                                    var bred = sqrt(dx2*dx2 + dy2*dy2)
-                                    size = 2*(len+bred)
+                                    val dx1 = (corners[0].x-corners[3].x).toDouble()
+                                    val dy1 = (corners[0].y-corners[3].y).toDouble()
+                                    size = sqrt(dx1 * dx1 + dy1 * dy1)
+//                                    val dx2 = (corners[2].x-corners[3].x).toDouble()
+//                                    val dy2 = (corners[2].y-corners[3].y).toDouble()
+//                                    val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
                                 }
-                                if(size > maxSize) {
-                                    maxSize = size
-                                    //finalEle = element.text biggest element
-                                    finalEle = block.text //block corresponding to the biggest element
-                                }
-//                                if(points!=null) {
-//                                    z = z + "\n" + points
-//                                }
+                                ElementSizes.add(ElementSize(size, element.text))
                             }
                         }
                     }
-//                    data class BlockSize(val size: Double, val block: String)
-//
-//                    val blockSizes = mutableListOf<BlockSize>()
-//
-//                    for (block in text.textBlocks) {
-//                        for (line in block.lines) {
-//                            for (element in line.elements) {
-//                                var size: Double = 0.0
-//                                val corners = element.cornerPoints
-//                                if (corners != null && corners.size == 4) {
-//                                    val dx1 = (corners[0].x - corners[1].x).toDouble()
-//                                    val dy1 = (corners[0].y - corners[1].y).toDouble()
-//                                    val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
-//                                    val dx2 = (corners[2].x - corners[3].x).toDouble()
-//                                    val dy2 = (corners[2].y - corners[3].y).toDouble()
-//                                    val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
-//                                    size = 2 * (len1 + len2)
-//                                }
-//                                blockSizes.add(BlockSize(size, block.text))
-//                            }
-//                        }
+                    val top5Elements:List<String> = ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
+//                    top5Elements.forEach { elementText ->
+//                        finalEle = finalEle + "\n" + elementText
 //                    }
-//                    val top3Blocks:List<String> = blockSizes.sortedByDescending { it.size }.take(3).map { it.block }
-//                    top3Blocks.forEach { blockText ->
-//                        finalEle = finalEle + "\n" + blockText
-//                    }
-
+//Score calculation
+                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+                    var score = 0.0
+                    var j =1.0
+                    val len = wordsArray.size
+                    val scoreArr = mutableListOf<Double>()
+                    for(i in wordsArray.indices){
+                        if(wordsArray[i].length > 3) {
+                            if(wordsArray[i].uppercase() == wordsArray[i]){
+                                score +=0.4
+                            }
+                            if (wordsArray[i].capitalize() == wordsArray[i]) {
+                                score += 0.3
+                            }
+                            if (i<(len/3)) {
+                                score += 0.2
+                            }
+                            else{
+                                if(i<(len*2/3)){
+                                    score+=0.25
+                                }
+                            }
+                        }
+                        scoreArr.add(score)
+                        score = 0.0
+                    }
+                    var adder = 0.6
+                    for(i in top5Elements.indices){
+                        for(j in wordsArray.indices){
+                            if(top5Elements[i] == wordsArray[j]){
+                                scoreArr[j] += adder
+                                adder -= 0.1
+                            }
+                        }
+                    }
+                    val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
+                    val max1 = wordsArray[i1]
+                    scoreArr[i1] = 0.0
+                    val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
+                    val max2 = wordsArray[i2]
+                    scoreArr[i2] = 0.0
+                    val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
+                    val max3 = wordsArray[i3]
+//                    finalEle = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ") +
+//                            "\n\n\n\n\n\n" +
+//                            top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    val scoredString = scoreArr.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    val top5elementsInString = top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+"Scored Array is"+"\n"+scoredString+"\n\n"+"Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+"Top 5 elements in size"+top5elementsInString
                     Log.i(TAG,recognizedText) //may have to remove
                     recognizedTextEt.setText(finalEle) //Remove later
                     //set the recognized text to edit text
@@ -319,7 +221,6 @@ class MainActivity : AppCompatActivity() {
             showToast("Failed to prepare image due to ${e.message}")
         }
     }
-
 
     private fun showInputImageDialog() {
 
@@ -381,7 +282,6 @@ class MainActivity : AppCompatActivity() {
             {
                 val data = result.data
                 imageUri = data!!.data
-                Log.d(TAG, "galleryActivityResultLauncher: imageUri: $imageUri ")
 
                 imageIv.setImageURI(imageUri)
             }
@@ -410,9 +310,6 @@ class MainActivity : AppCompatActivity() {
 
                 //image is taken from camera
                 //we already have the image in imageUri using function pickImageCamera
-                //imageIv.setImageURI(imageUri)
-                val data = result.data
-                Log.d(TAG, "cameraActivityResultLauncher: imageUri: $imageUri")
                 imageIv.setImageURI(imageUri)
             }
             else{
