@@ -29,7 +29,10 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 import kotlin.math.sqrt
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -133,10 +136,11 @@ class MainActivity : AppCompatActivity() {
                                 if (corners != null && corners.size == 4) {
                                     val dx1 = (corners[0].x-corners[3].x).toDouble()
                                     val dy1 = (corners[0].y-corners[3].y).toDouble()
-                                    size = sqrt(dx1 * dx1 + dy1 * dy1)
-//                                    val dx2 = (corners[2].x-corners[3].x).toDouble()
-//                                    val dy2 = (corners[2].y-corners[3].y).toDouble()
-//                                    val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
+                                    val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
+                                    val dx2 = (corners[2].x-corners[3].x).toDouble()
+                                    val dy2 = (corners[2].y-corners[3].y).toDouble()
+                                    val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
+                                    size = (len1+len2)*2
                                 }
                                 ElementSizes.add(ElementSize(size, element.text))
                             }
@@ -144,14 +148,19 @@ class MainActivity : AppCompatActivity() {
                     }
                     val top5Elements:List<String> = ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
 
-//Score calculation
+                    //Score calculation
                     val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
                     var score = 0.0
                     var j =1.0
                     val len = wordsArray.size
                     val scoreArr = mutableListOf<Double>()
+                    val p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE)
                     for(i in wordsArray.indices){
                         if(wordsArray[i].length > 3) {
+                            val m = p.matcher(wordsArray[i])
+                            while(m.find()){
+                                score = -0.7
+                            }
                             if(wordsArray[i].uppercase() == wordsArray[i]){
                                 score +=0.4
                             }
@@ -179,6 +188,8 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     }
+
+                    //Setting up max scorers
                     val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
                     val max1 = wordsArray[i1]
                     scoreArr[i1] = 0.0
@@ -188,35 +199,72 @@ class MainActivity : AppCompatActivity() {
                     val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
                     val max3 = wordsArray[i3]
 
+                    //Taking the block for product
+                    var checker = ""
+                    var flagMax = 0
+                    var finalProd = ""
+                    for (block in text.textBlocks) {
+                        for (line in block.lines) {
+                            for (element in line.elements) {
+                                if (max1 == element.text && flagMax==0) {
+                                    finalProd = block.text
+                                }
+                                if (max2 == element.text) {
+                                    checker = block.text
+                                }
+                                if(checker==block.text && max3==element.text){
+                                    finalProd = block.text
+                                    flagMax = 1
+                                }
+                            }
+                        }
+                    }
+
+                    //Setting up all the arrays
                     val scoredString = scoreArr.joinToString(prefix = "[", postfix = "]", separator = ", ")
                     val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
                     val top5elementsInString = top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
-
                     val recognizedTextLines = recognizedText.split("\n").toTypedArray()
 
+                    //MRP recognition
                     var mrpValue = "not found"
-//                    val strl = recognizedText.split("\n").toTypedArray()
+                    val strl = recognizedText.split("\n").toTypedArray()
 //                    for(x in strl) {
 //                        if (x.contains("Rs") || x.contains("MRP") || x.contains("mrp") || x.contains("₹")) {
 //                            mrpValue = x;
 //                        }
 //                        }
 
-
+                    //MRP recognition
+                    var completeCheck = 1
                     for (line in recognizedTextLines) {
-                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹)\b"""))) {
+                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|)\b""",RegexOption.IGNORE_CASE))) {
                             extractMrpValue(line)?.let {
-                                mrpValue = it
+                                mrpValue = it+" met1"
+                                completeCheck = 0
                             }
                         }
                     }
-                    //Log.i(TAG,recognizedText)
+                    if(completeCheck == 1) {
+                        val regexDigit = "-?[0-9]+(\\.[0-9]+)?".toRegex()
+                        for (x in wordsArray.indices) {
+                            if (wordsArray[x].matches(regexDigit)) {
+                                if (x.toDouble() in 5.0..10000.0) {
+                                    showToast("hi")
+                                    mrpValue = mrpValue + " " + wordsArray[x].toString()
+                                }
+                            }
+                        }
+                    }
 
+                    //Date detection
                     val dates = extractDates(wordsString)
 
+                    //Final Printing
                     finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+
                             "Scored Array is"+"\n"+scoredString+"\n\n"+
                             "Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+
+                            "Product is:"+finalProd+"\n\n"+
                             "Top 5 elements in size"+top5elementsInString + "\n\n"+
                             "MRP: ₹" + mrpValue + "\n\n"+
                             "Manufacturing date: " + dates.first + "\n\n"+
@@ -240,8 +288,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun extractMrpValue(line: String): String? {
-        val mrpPattern = """(?i)\b(?:Rs|MRP|mrp|₹)\s*[:.]?\s*(\d+(?:\.\d+)?)""".toRegex()
-
+        val mrpPattern = """(?i)\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|)\s*[:.]?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
         val matchResult = mrpPattern.find(line)
         return matchResult?.groupValues?.get(1)?.trim()
     }
