@@ -1,4 +1,6 @@
-        package com.example.textrecognition4
+package com.example.textrecognition4
+
+//import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 
 import android.Manifest
 import android.app.Activity
@@ -19,14 +21,14 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.text.isDigitsOnly
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
-//import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity() {
@@ -75,7 +77,7 @@ class MainActivity : AppCompatActivity() {
 
         //handle click, show input image dialog
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-       //textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
+        //textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
 
 
 
@@ -141,9 +143,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     val top5Elements:List<String> = ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
-//                    top5Elements.forEach { elementText ->
-//                        finalEle = finalEle + "\n" + elementText
-//                    }
+
 //Score calculation
                     val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
                     var score = 0.0
@@ -187,25 +187,42 @@ class MainActivity : AppCompatActivity() {
                     scoreArr[i2] = 0.0
                     val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
                     val max3 = wordsArray[i3]
-//                    finalEle = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ") +
-//                            "\n\n\n\n\n\n" +
-//                            top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
+
                     val scoredString = scoreArr.joinToString(prefix = "[", postfix = "]", separator = ", ")
                     val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
                     val top5elementsInString = top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
-                    finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+"Scored Array is"+"\n"+scoredString+"\n\n"+"Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+"Top 5 elements in size"+top5elementsInString
-                    Log.i(TAG,recognizedText) //may have to remove
-                    recognizedTextEt.setText(finalEle) //Remove later
-                    //set the recognized text to edit text
-                    /* val strl = recognizedText.split("\n").toTypedArray()
-                     for(x in strl) {
-                         if (x.contains("Rs")) {
-                             recognizedTextEt.setText(x)
-                         }
-                     }*/
+
+                    val recognizedTextLines = recognizedText.split("\n").toTypedArray()
+
+                    var mrpValue = "not found"
+//                    val strl = recognizedText.split("\n").toTypedArray()
+//                    for(x in strl) {
+//                        if (x.contains("Rs") || x.contains("MRP") || x.contains("mrp") || x.contains("₹")) {
+//                            mrpValue = x;
+//                        }
+//                        }
+
+
+                    for (line in recognizedTextLines) {
+                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹)\b"""))) {
+                            extractMrpValue(line)?.let {
+                                mrpValue = it
+                            }
+                        }
+                    }
                     //Log.i(TAG,recognizedText)
 
-                    //recognizedTextEt.setText(recognizedText)
+                    val dates = extractDates(wordsString)
+
+                    finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+
+                            "Scored Array is"+"\n"+scoredString+"\n\n"+
+                            "Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+
+                            "Top 5 elements in size"+top5elementsInString + "\n\n"+
+                            "MRP: ₹" + mrpValue + "\n\n"+
+                            "Manufacturing date: " + dates.first + "\n\n"+
+                            "Expiry date: " + dates.second
+
+                    recognizedTextEt.setText(finalEle)
 
                 }
                 .addOnFailureListener { e->
@@ -220,6 +237,63 @@ class MainActivity : AppCompatActivity() {
             progressDialog.dismiss()
             showToast("Failed to prepare image due to ${e.message}")
         }
+    }
+
+    fun extractMrpValue(line: String): String? {
+        val mrpPattern = """(?i)\b(?:Rs|MRP|mrp|₹)\s*[:.]?\s*(\d+(?:\.\d+)?)""".toRegex()
+
+        val matchResult = mrpPattern.find(line)
+        return matchResult?.groupValues?.get(1)?.trim()
+    }
+
+
+    private fun extractDates(text: String): Pair<String?, String?> {
+        val potentialDates = mutableListOf<String>()
+
+        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
+        val dateRegex = """\b\d{2}/\d{2}/\d{4}\b|\b\d{2}/\d{2}/\d{2}\b|\b\d{2}[A-Z]{3}\d{2}\b|\b\d{2}\.\d{2}\.\d{4}\b|\b\d{2}\.\d{2}\.\d{2}\b""".toRegex()
+
+        // Find all potential dates using the regex
+        dateRegex.findAll(text).forEach { match ->
+            potentialDates.add(match.value)
+            Log.i(TAG, match.value)
+        }
+
+        // If no dates are found, return null for both
+        if (potentialDates.isEmpty()) {
+            return null to null
+        }
+
+        // Helper function to convert date strings to Date objects for comparison
+        fun parseDate(dateStr: String): Date? {
+            val formats = listOf(
+                SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
+                SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
+                SimpleDateFormat("ddMMMyy", Locale.ENGLISH),
+                SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
+                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH)
+            )
+
+            for (format in formats) {
+                try {
+                    return format.parse(dateStr)
+                } catch (e: Exception) {
+                    // Continue to the next format
+                }
+            }
+            return null
+        }
+
+        // Sort the potential dates by their parsed Date objects
+        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
+            .sortedBy { it.second }
+            .map { it.first }
+
+        // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
+        val manufacturingDate = sortedDates.firstOrNull()
+        val expiryDate = sortedDates.getOrNull(1)
+
+        return manufacturingDate to expiryDate
     }
 
     private fun showInputImageDialog() {
