@@ -19,11 +19,12 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
-import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
+//import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 import kotlin.math.sqrt
@@ -65,8 +66,8 @@ class MainActivity : AppCompatActivity() {
         recognizedTextEt = findViewById(R.id.recognizedTextEt)
 
         //init arrays of permissions required for camera,gallery
-        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        storagePermissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_IMAGES)
+        storagePermissions = arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
 
         progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Please wait")
@@ -74,7 +75,7 @@ class MainActivity : AppCompatActivity() {
 
         //handle click, show input image dialog
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
+        //textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
 
 
 
@@ -312,17 +313,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkStoragePermission(): Boolean{
 
-        //return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-        return true
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+        //return true
     }
 
     private fun checkCameraPermissions() : Boolean{
 
-//        val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-//        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-//
-//        return cameraResult && storageResult
-        return true
+        val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+
+        return cameraResult && storageResult
+        //return true
     }
 
     private fun requestStoragePermission(){
