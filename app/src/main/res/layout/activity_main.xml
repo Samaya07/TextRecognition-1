@@ -39,13 +39,18 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
             
-            <com.google.android.material.imageview.ShapeableImageView
+           <!-- <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/imageIv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:strokeWidth="2dp"
                 android:src="@drawable/baseline_image_24"
-                android:adjustViewBounds="true"/>
+                android:adjustViewBounds="true"/>-->
+            <VideoView
+                android:id = "@+id/videoIv"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:src = "@drawable/baseline_image_24"/>
 
 
             <TextView

@@ -5,17 +5,22 @@ import android.app.Activity
 import android.app.ProgressDialog
 import android.content.ContentValues
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
+import android.media.MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
+import android.widget.VideoView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -24,20 +29,17 @@ import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
-//import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-
 import kotlin.math.sqrt
+
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var inputImageBtn:MaterialButton
     private lateinit var recognizeTextBtn:MaterialButton
-    private lateinit var imageIv:ImageView
+    //private lateinit var imageIv:ImageView
+    private lateinit var videoIv: VideoView
     private lateinit var recognizedTextEt : EditText
-
-
-
 
     private companion object {
 
@@ -46,7 +48,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     //uri of the image that we will take from camera/gallery
-    private var imageUri: Uri? = null
+    //private var imageUri: Uri? = null
+    private var videoUri: Uri? = null
 
     private lateinit var cameraPermissions: Array<String>
     private lateinit var storagePermissions: Array<String>
@@ -62,12 +65,13 @@ class MainActivity : AppCompatActivity() {
         //init UI views
         inputImageBtn = findViewById(R.id.inputImageBtn)
         recognizeTextBtn = findViewById(R.id.recognizeTextBtn)
-        imageIv = findViewById(R.id.imageIv)
+        //imageIv = findViewById(R.id.imageIv)
+        videoIv = findViewById(R.id.videoIv)
         recognizedTextEt = findViewById(R.id.recognizedTextEt)
 
         //init arrays of permissions required for camera,gallery
-        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_IMAGES)
-        storagePermissions = arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_VIDEO)
+        storagePermissions = arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
 
         progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Please wait")
@@ -75,7 +79,6 @@ class MainActivity : AppCompatActivity() {
 
         //handle click, show input image dialog
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        //textRecognizer = TextRecognition.getClient((DevanagariTextRecognizerOptions.Builder().build()))
 
 
 
@@ -87,14 +90,16 @@ class MainActivity : AppCompatActivity() {
 
         recognizeTextBtn.setOnClickListener {
 
-            if(imageUri == null){
+            /*if(imageUri == null){
                 showToast("Pick Image first")
+            }*/
+            if(videoUri == null){
+                showToast("Pick Video first")
             }
             else{
                 recognizeTextFromImage()
             }
         }
-
     }
 
     private fun recognizeTextFromImage() {
@@ -105,7 +110,18 @@ class MainActivity : AppCompatActivity() {
 
         try{
             //Prepare InputImage from image uri
-            val inputImage = InputImage.fromFilePath(this, imageUri!!)
+            val path1 = videoUri?.path
+            Log.i(TAG,"this")
+            Log.i(TAG, videoUri.toString())
+
+            val bitmapV = getVideoFrame(context=baseContext)
+
+           // val inputImage = InputImage.fromBitmap(bitmapV.get(0),0)
+            val len = bitmapV.size
+            val inputImage = InputImage.fromBitmap(bitmapV.get(len-1), 0)
+
+
+            //val inputImage = InputImage.fromFilePath(this, videoUri!!)
             //image prepared, we are about to start text recognition process, change progress message
             progressDialog.setMessage("Recognizing text")
 
@@ -124,7 +140,7 @@ class MainActivity : AppCompatActivity() {
                     val arrayOfText = recognizedText.split("\n").toTypedArray()  //The recognized text into an array
                     for(x in arrayOfText) {
                         if (x.contains("Rs") or x.contains("MRP")
-                            or x.contains("M.R.P") or x.contains("\u20B9")) {
+                            or x.contains("M.R.P")) {
                             flag = 1
                             //Log.i(TAG, x)
                             val match = pattern.find(x)
@@ -215,6 +231,72 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getVideoFrame(context: Context): ArrayList<Bitmap> {
+
+        //var bitmap: Bitmap? = null
+        val rev = ArrayList<Bitmap>()
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, videoUri)
+            //bitmap = retriever.getFrameAtTime(time)
+
+            //Create a new Media Player
+            val mp: MediaPlayer = MediaPlayer.create(baseContext, videoUri)
+
+            val millis = mp.duration
+
+            var i = 1000000
+            while (i < millis*1000) {
+                val bitmap = retriever.getFrameAtTime(i.toLong(), OPTION_CLOSEST_SYNC)
+                rev.add(bitmap!!)
+                i += 1000000
+            }
+
+        } catch (ex: RuntimeException) {
+            ex.printStackTrace()
+        } finally {
+            try {
+                retriever.release()
+            } catch (ex: RuntimeException) {
+                ex.printStackTrace()
+            }
+        }
+        return rev
+
+    }
+
+    /*private fun getVideoFrame(context: Context): ArrayList<Bitmap> {
+        //var bitmap: Bitmap? = null
+        val rev = ArrayList<Bitmap>()
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, videoUri)
+            //bitmap = retriever.getFrameAtTime(time)
+
+//Create a new Media Player
+            val mp: MediaPlayer = MediaPlayer.create(baseContext, videoUri)
+
+            val millis = mp.duration
+
+            var i = 1000000
+            while (i < millis*1000) {
+                val bitmap = retriever.getFrameAtTime(i.toLong(), OPTION_CLOSEST_SYNC)
+                rev.add(bitmap!!)
+                i += 1000000
+            }
+
+        } catch (ex: RuntimeException) {
+            ex.printStackTrace()
+        } finally {
+            try {
+                retriever.release()
+            } catch (ex: RuntimeException) {
+                ex.printStackTrace()
+            }
+        }
+        return rev
+    }*/
+
     private fun showInputImageDialog() {
 
         //init PopupMenu param 1 is context, param 2 is UI View where you want to show PopupMenu
@@ -264,7 +346,7 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_PICK)
 
         //set type of file we want to pick i.e. image
-        intent.type = "image/*"
+        intent.type = "video/*"
         galleryActivityResultLauncher.launch(intent)
 
     }
@@ -274,9 +356,11 @@ class MainActivity : AppCompatActivity() {
             if(result.resultCode == Activity.RESULT_OK)
             {
                 val data = result.data
-                imageUri = data!!.data
+                //imageUri = data!!.data
+                videoUri = data!!.data
 
-                imageIv.setImageURI(imageUri)
+               // imageIv.setImageURI(imageUri)
+                videoIv.setVideoURI((videoUri))
             }
             else
             {
@@ -286,13 +370,18 @@ class MainActivity : AppCompatActivity() {
         }
     private fun pickImageCamera(){
         val values = ContentValues()
-        values.put(MediaStore.Images.Media.TITLE, "Sample Title")
-        values.put(MediaStore.Images.Media.DESCRIPTION, "Sample Description")
+        //values.put(MediaStore.Images.Media.TITLE, "Sample Title")
+        //values.put(MediaStore.Images.Media.DESCRIPTION, "Sample Description")
+        values.put(MediaStore.Video.Media.TITLE, "Sample Title")
+        values.put(MediaStore.Video.Media.DESCRIPTION, "Sample Description")
 
-        imageUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values)
+        //imageUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values)
+        videoUri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
 
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        intent.putExtra(MediaStore.EXTRA_OUTPUT,imageUri)
+        //val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+        //intent.putExtra(MediaStore.EXTRA_OUTPUT,imageUri)
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, videoUri)
         cameraActivityResultLauncher.launch(intent)
     }
 
@@ -303,7 +392,8 @@ class MainActivity : AppCompatActivity() {
 
                 //image is taken from camera
                 //we already have the image in imageUri using function pickImageCamera
-                imageIv.setImageURI(imageUri)
+                //imageIv.setImageURI(imageUri)
+                videoIv.setVideoURI(videoUri)
             }
             else{
                 //cancelled
@@ -313,14 +403,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkStoragePermission(): Boolean{
 
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
         //return true
     }
 
     private fun checkCameraPermissions() : Boolean{
 
         val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
 
         return cameraResult && storageResult
         //return true
