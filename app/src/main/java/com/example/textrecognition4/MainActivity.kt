@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -40,10 +41,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recognizeTextBtn:MaterialButton
     private lateinit var imageIv:ImageView
     private lateinit var recognizedTextEt : EditText
-
-
-
-
     private companion object {
 
         private const val CAMERA_REQUEST_CODE = 100
@@ -101,7 +98,109 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+    private fun extractProduct(text: Text): Array<Any> {
+        val recognizedText = text.text
 
+        data class ElementSize(val size: Double, val element: String)
+
+        val ElementSizes = mutableListOf<ElementSize>()
+        for (block in text.textBlocks) {
+            for (line in block.lines) {
+                for (element in line.elements) {
+                    var size: Double = 0.0
+                    val corners = element.cornerPoints
+                    if (corners != null && corners.size == 4) {
+                        val dx1 = (corners[0].x - corners[3].x).toDouble()
+                        val dy1 = (corners[0].y - corners[3].y).toDouble()
+                        val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
+                        val dx2 = (corners[2].x - corners[3].x).toDouble()
+                        val dy2 = (corners[2].y - corners[3].y).toDouble()
+                        val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
+                        size = (len1 + len2) * 2
+                    }
+                    ElementSizes.add(ElementSize(size, element.text))
+                }
+            }
+        }
+        val top5Elements: List<String> =
+            ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
+
+        //Score calculation
+        val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+        var score = 0.0
+        var j = 1.0
+        val len = wordsArray.size
+        val scoreArr = mutableListOf<Double>()
+        val p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE)
+        for (i in wordsArray.indices) {
+            if (wordsArray[i].length > 3) {
+                val m = p.matcher(wordsArray[i])
+                while (m.find()) {
+                    score = -0.7
+                }
+                if (wordsArray[i].uppercase() == wordsArray[i]) {
+                    score += 0.4
+                }
+                if (wordsArray[i].capitalize() == wordsArray[i]) {
+                    score += 0.3
+                }
+                if (i < (len / 3)) {
+                    score += 0.2
+                } else {
+                    if (i < (len * 2 / 3)) {
+                        score += 0.25
+                    }
+                }
+            }
+            scoreArr.add(score)
+            score = 0.0
+        }
+        var adder = 0.6
+        for (i in top5Elements.indices) {
+            for (j in wordsArray.indices) {
+                if (top5Elements[i] == wordsArray[j]) {
+                    scoreArr[j] += adder
+                    adder -= 0.1
+                }
+            }
+        }
+
+        //Setting up max scorers
+        val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
+        val max1 = wordsArray[i1]
+        val max1Score = scoreArr[i1]
+        scoreArr[i1] = 0.0
+        val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
+        val max2 = wordsArray[i2]
+        val max2Score = scoreArr[i2]
+        scoreArr[i2] = 0.0
+        val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
+        val max3 = wordsArray[i3]
+
+        var checker = ""
+        var flagMax = 0
+        var finalProd = ""
+        var finalScore = 0.0
+        for (block in text.textBlocks) {
+            for (line in block.lines) {
+                for (element in line.elements) {
+                    if (max1 == element.text && flagMax == 0) {
+                        finalProd = block.text
+                        finalScore = max1Score
+                    }
+                    if (max2 == element.text) {
+                        checker = block.text
+                    }
+                    if (checker == block.text && max3 == element.text) {
+                        finalProd = block.text
+                        finalScore = max2Score
+                        flagMax = 1
+                    }
+                }
+            }
+        }
+        return arrayOf(finalProd, finalScore)
+    }
     private fun recognizeTextFromImage() {
 
         //set message and show progress dialog
@@ -122,109 +221,14 @@ class MainActivity : AppCompatActivity() {
                     //get the recognized text
                     val recognizedText = text.text
                     var finalEle = " "
-                    var maxSize : Double = 0.0
 
-                    data class ElementSize(val size: Double, val element: String)
+                    //Function for the best product
+                    val finalProd = extractProduct(text)
 
-                    val ElementSizes = mutableListOf<ElementSize>()
-
-                    for (block in text.textBlocks) {
-                        for (line in block.lines) {
-                            for (element in line.elements) {
-                                var size: Double = 0.0
-                                val corners = element.cornerPoints
-                                if (corners != null && corners.size == 4) {
-                                    val dx1 = (corners[0].x-corners[3].x).toDouble()
-                                    val dy1 = (corners[0].y-corners[3].y).toDouble()
-                                    val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
-                                    val dx2 = (corners[2].x-corners[3].x).toDouble()
-                                    val dy2 = (corners[2].y-corners[3].y).toDouble()
-                                    val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
-                                    size = (len1+len2)*2
-                                }
-                                ElementSizes.add(ElementSize(size, element.text))
-                            }
-                        }
-                    }
-                    val top5Elements:List<String> = ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
-
-                    //Score calculation
-                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
-                    var score = 0.0
-                    var j =1.0
-                    val len = wordsArray.size
-                    val scoreArr = mutableListOf<Double>()
-                    val p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE)
-                    for(i in wordsArray.indices){
-                        if(wordsArray[i].length > 3) {
-                            val m = p.matcher(wordsArray[i])
-                            while(m.find()){
-                                score = -0.7
-                            }
-                            if(wordsArray[i].uppercase() == wordsArray[i]){
-                                score +=0.4
-                            }
-                            if (wordsArray[i].capitalize() == wordsArray[i]) {
-                                score += 0.3
-                            }
-                            if (i<(len/3)) {
-                                score += 0.2
-                            }
-                            else{
-                                if(i<(len*2/3)){
-                                    score+=0.25
-                                }
-                            }
-                        }
-                        scoreArr.add(score)
-                        score = 0.0
-                    }
-                    var adder = 0.6
-                    for(i in top5Elements.indices){
-                        for(j in wordsArray.indices){
-                            if(top5Elements[i] == wordsArray[j]){
-                                scoreArr[j] += adder
-                                adder -= 0.1
-                            }
-                        }
-                    }
-
-                    //Setting up max scorers
-                    val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
-                    val max1 = wordsArray[i1]
-                    scoreArr[i1] = 0.0
-                    val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
-                    val max2 = wordsArray[i2]
-                    scoreArr[i2] = 0.0
-                    val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
-                    val max3 = wordsArray[i3]
-
-                    //Taking the block for product
-                    var checker = ""
-                    var flagMax = 0
-                    var finalProd = ""
-                    for (block in text.textBlocks) {
-                        for (line in block.lines) {
-                            for (element in line.elements) {
-                                if (max1 == element.text && flagMax==0) {
-                                    finalProd = block.text
-                                }
-                                if (max2 == element.text) {
-                                    checker = block.text
-                                }
-                                if(checker==block.text && max3==element.text){
-                                    finalProd = block.text
-                                    flagMax = 1
-                                }
-                            }
-                        }
-                    }
-
-                    //Setting up all the arrays
-                    val scoredString = scoreArr.joinToString(prefix = "[", postfix = "]", separator = ", ")
-                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
-                    val top5elementsInString = top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    //Added code due to function
                     val recognizedTextLines = recognizedText.split("\n").toTypedArray()
+                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
                     //MRP recognition
                     var mrpValue = "not found"
@@ -235,7 +239,6 @@ class MainActivity : AppCompatActivity() {
 //                        }
 //                        }
 
-                    //MRP recognition
                     var completeCheck = 1
                     for (line in recognizedTextLines) {
                         if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|)\b""",RegexOption.IGNORE_CASE))) {
@@ -250,7 +253,6 @@ class MainActivity : AppCompatActivity() {
                         for (x in wordsArray.indices) {
                             if (wordsArray[x].matches(regexDigit)) {
                                 if (x.toDouble() in 5.0..10000.0) {
-                                    showToast("hi")
                                     //mrpValue = mrpValue + " " + wordsArray[x].toString()
                                     mrpValue = wordsArray[x].toString()
                                 }
@@ -262,11 +264,15 @@ class MainActivity : AppCompatActivity() {
                     val dates = extractDates(wordsString)
 
                     //Final Printing
-                    finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+
-                            "Scored Array is"+"\n"+scoredString+"\n\n"+
-                            "Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+
-                            "Product is:"+finalProd+"\n\n"+
-                            "Top 5 elements in size"+top5elementsInString + "\n\n"+
+//                    finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+
+//                            "Scored Array is"+"\n"+scoredString+"\n\n"+
+//                            "Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+
+//                            "Product is:"+finalProd+"\n\n"+
+//                            "Top 5 elements in size"+top5elementsInString + "\n\n"+
+//                            "MRP: ₹" + mrpValue + "\n\n"+
+//                            "Manufacturing date: " + dates.first + "\n\n"+
+//                            "Expiry date: " + dates.second
+                    finalEle = "Product is:"+finalProd[0] + "\n"+finalProd[1] + "\n\n"+
                             "MRP: ₹" + mrpValue + "\n\n"+
                             "Manufacturing date: " + dates.first + "\n\n"+
                             "Expiry date: " + dates.second
@@ -309,7 +315,7 @@ class MainActivity : AppCompatActivity() {
             Log.i(TAG, match.value)
         }
 
-        // If no dates are found, return null for both
+        // If no dates are found, return null for both  
         if (potentialDates.isEmpty()) {
             return null to null
         }
