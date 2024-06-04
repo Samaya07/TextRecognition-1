@@ -21,6 +21,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -29,7 +30,6 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.regex.Matcher
 import java.util.regex.Pattern
 import kotlin.math.sqrt
 
@@ -71,8 +71,8 @@ class MainActivity : AppCompatActivity() {
         recognizedTextEt = findViewById(R.id.recognizedTextEt)
 
         //init arrays of permissions required for camera,gallery
-        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        storagePermissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_IMAGES)
+        storagePermissions = arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
 
         progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Please wait")
@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity() {
                     //MRP recognition
                     var completeCheck = 1
                     for (line in recognizedTextLines) {
-                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|)\b""",RegexOption.IGNORE_CASE))) {
+                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|)\b""",RegexOption.IGNORE_CASE))) {
                             extractMrpValue(line)?.let {
                                 mrpValue = it+" met1"
                                 completeCheck = 0
@@ -251,7 +251,8 @@ class MainActivity : AppCompatActivity() {
                             if (wordsArray[x].matches(regexDigit)) {
                                 if (x.toDouble() in 5.0..10000.0) {
                                     showToast("hi")
-                                    mrpValue = mrpValue + " " + wordsArray[x].toString()
+                                    //mrpValue = mrpValue + " " + wordsArray[x].toString()
+                                    mrpValue = wordsArray[x].toString()
                                 }
                             }
                         }
@@ -288,7 +289,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun extractMrpValue(line: String): String? {
-        val mrpPattern = """(?i)\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|)\s*[:.]?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
+        val mrpPattern = """\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]\s*₹?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
         val matchResult = mrpPattern.find(line)
         return matchResult?.groupValues?.get(1)?.trim()
     }
@@ -298,7 +299,9 @@ class MainActivity : AppCompatActivity() {
         val potentialDates = mutableListOf<String>()
 
         // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
-        val dateRegex = """\b\d{2}/\d{2}/\d{4}\b|\b\d{2}/\d{2}/\d{2}\b|\b\d{2}[A-Z]{3}\d{2}\b|\b\d{2}\.\d{2}\.\d{4}\b|\b\d{2}\.\d{2}\.\d{2}\b""".toRegex()
+        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
+        val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
+
 
         // Find all potential dates using the regex
         dateRegex.findAll(text).forEach { match ->
@@ -318,7 +321,10 @@ class MainActivity : AppCompatActivity() {
                 SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
                 SimpleDateFormat("ddMMMyy", Locale.ENGLISH),
                 SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
-                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH)
+                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
+                SimpleDateFormat("dd MM yyyy", Locale.ENGLISH),  // Added spaces version
+                SimpleDateFormat("dd MM yy", Locale.ENGLISH),     // Added spaces version
+                SimpleDateFormat("dd MMM yy", Locale.ENGLISH)
             )
 
             for (format in formats) {
@@ -441,17 +447,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkStoragePermission(): Boolean{
 
-        //return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-        return true
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+        //return true
     }
 
     private fun checkCameraPermissions() : Boolean{
 
-//        val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-//        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-//
-//        return cameraResult && storageResult
-        return true
+        val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+
+        return cameraResult && storageResult
+        //return true
     }
 
     private fun requestStoragePermission(){
