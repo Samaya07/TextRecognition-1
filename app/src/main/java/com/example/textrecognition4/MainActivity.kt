@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
+//Product Function
     private fun extractProduct(text: Text): ArrayList<Any> {
         val recognizedText = text.text
 
@@ -213,14 +213,14 @@ class MainActivity : AppCompatActivity() {
         }
         return arrayListOf(finalProd, finalScore)
     }
-
+//MRP Function
     fun extractMrpValue(line: String): String? {
         val mrpPattern = """\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]\s*₹?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
         val matchResult = mrpPattern.find(line)
         return matchResult?.groupValues?.get(1)?.trim()
     }
 
-
+//Date Function
     private fun extractDates(text: String): Pair<String?, String?> {
         val potentialDates = mutableListOf<String>()
 
@@ -296,6 +296,52 @@ class MainActivity : AppCompatActivity() {
                 .addOnSuccessListener { text ->
                         //process completed, dismiss dialog
                        // progressDialog.dismiss()
+
+//MRP and Date Detection code
+                    val recognizedText = text.text
+                    var finalEle = " "
+
+                    //Function for the best product
+                    val finalProd = extractProduct(text)
+
+                    //Added code due to function
+                    val recognizedTextLines = recognizedText.split("\n").toTypedArray()
+                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+
+                    //MRP recognition
+                    var mrpValue = "not found"
+                    val strl = recognizedText.split("\n").toTypedArray()
+//                    for(x in strl) {
+//                        if (x.contains("Rs") || x.contains("MRP") || x.contains("mrp") || x.contains("₹")) {
+//                            mrpValue = x;
+//                        }
+//                        }
+
+                    var completeCheck = 1
+                    for (line in recognizedTextLines) {
+                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|)\b""",RegexOption.IGNORE_CASE))) {
+                            extractMrpValue(line)?.let {
+                                mrpValue = it+" met1"
+                                completeCheck = 0
+                            }
+                        }
+                    }
+                    if(completeCheck == 1) {
+                        val regexDigit = "-?[0-9]+(\\.[0-9]+)?".toRegex()
+                        for (x in wordsArray.indices) {
+                            if (wordsArray[x].matches(regexDigit)) {
+                                if (x.toDouble() in 5.0..10000.0) {
+                                    //mrpValue = mrpValue + " " + wordsArray[x].toString()
+                                    mrpValue = wordsArray[x].toString()
+                                }
+                            }
+                        }
+                    }
+
+                    //Date detection
+                    val dates = extractDates(wordsString)
+//End of MRP and date Detection
 
                     val result = extractProduct(text)
 
