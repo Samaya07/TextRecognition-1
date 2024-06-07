@@ -81,8 +81,8 @@ class MainActivity : AppCompatActivity() {
 
 
         //init arrays of permissions required for camera,gallery
-        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        storagePermissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_VIDEO)
+        storagePermissions = arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
 
         progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Please wait")
@@ -545,14 +545,14 @@ private fun extractMrpValue(text: String): String{
 
     private fun checkStoragePermission(): Boolean{
 
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
         //return true
     }
 
     private fun checkCameraPermissions() : Boolean{
 
         val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
 
         return cameraResult && storageResult
         //return true
