@@ -63,8 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textRecognizer: TextRecognizer
     private var arrayOfProds = arrayListOf<ArrayList<Any>>()
     private var arrayBitmaps = arrayListOf<Bitmap>()
-    private var millis = 0
-    private var num = 0
+    private var frameIndex = 0
     private var maxScore = 0.0
     private lateinit var finalResult: String
     private lateinit var finalProduct: String
@@ -110,7 +109,7 @@ class MainActivity : AppCompatActivity() {
 
                 arrayOfProds.clear()
                 arrayBitmaps.clear()
-                num = 0
+                frameIndex = 0
                 maxScore = 0.0
                 finalResult = ""
                 finalProduct = ""
@@ -351,17 +350,16 @@ private fun extractMrpValue(text: String): String{
                     //Product Detection
                     val result = extractProduct(text)
                     arrayOfProds.add(result)
-                    Log.i(TAG,arrayOfProds.toString())
                     //Picking max score product
-                    var scorer = result[1].toString()
-                    var intscorer = scorer.toDouble()
-                    if(intscorer>maxScore){
-                        maxScore = intscorer
+                    val scorer = result[1].toString()
+                    val intScorer = scorer.toDouble()
+                    if(intScorer>maxScore){
+                        maxScore = intScorer
                         finalProduct = result[0].toString()
                     }
                     //Printing final
-                    num += 1
-                    if(num == (millis/1000)*5)
+                    frameIndex += 1
+                    if(frameIndex == arrayBitmaps.size)
                     {
                         finalResult =
                             "ProductArray\n$arrayOfProds\n\n\nProduct: $finalProduct\n\n\nDate:$dates\n\n\nMRP:$mrpValue"
@@ -399,18 +397,18 @@ private fun extractMrpValue(text: String): String{
             //Create a new Media Player
             val mp: MediaPlayer = MediaPlayer.create(baseContext, videoUri)
 
-            millis = mp.duration
+            val millis = mp.duration
 
-            Log.i(TAG,"millis")
-            Log.i(TAG,millis.toString())
+            Log.i(TAG,"millis $millis")
+            val fps = 5
 
-            var i = 1000000/5
+            var i = 1000000/fps
             while (i < millis*1000) {
                 val bitmap = retriever.getFrameAtTime(i.toLong(), OPTION_CLOSEST_SYNC)
                 rev.add(bitmap!!)
                 recognizeTextFromImage(bitmap)
 
-                i += 1000000/5
+                i += 1000000/fps
             }
 
         } catch (ex: RuntimeException) {
@@ -536,14 +534,14 @@ private fun extractMrpValue(text: String): String{
 
     private fun checkStoragePermission(): Boolean{
 
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
         //return true
     }
 
     private fun checkCameraPermissions() : Boolean{
 
         val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
+        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
 
         return cameraResult && storageResult
         //return true
