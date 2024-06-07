@@ -6,11 +6,13 @@ import android.Manifest
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.Menu
 import android.widget.EditText
 import android.widget.ImageView
@@ -22,9 +24,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.regex.Pattern
 import kotlin.math.sqrt
 
@@ -35,10 +41,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recognizeTextBtn:MaterialButton
     private lateinit var imageIv:ImageView
     private lateinit var recognizedTextEt : EditText
-
-
-
-
     private companion object {
 
         private const val CAMERA_REQUEST_CODE = 100
@@ -96,7 +98,109 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+    private fun extractProduct(text: Text): Array<Any> {
+        val recognizedText = text.text
 
+        data class ElementSize(val size: Double, val element: String)
+
+        val ElementSizes = mutableListOf<ElementSize>()
+        for (block in text.textBlocks) {
+            for (line in block.lines) {
+                for (element in line.elements) {
+                    var size: Double = 0.0
+                    val corners = element.cornerPoints
+                    if (corners != null && corners.size == 4) {
+                        val dx1 = (corners[0].x - corners[3].x).toDouble()
+                        val dy1 = (corners[0].y - corners[3].y).toDouble()
+                        val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
+                        val dx2 = (corners[2].x - corners[3].x).toDouble()
+                        val dy2 = (corners[2].y - corners[3].y).toDouble()
+                        val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
+                        size = (len1 + len2) * 2
+                    }
+                    ElementSizes.add(ElementSize(size, element.text))
+                }
+            }
+        }
+        val top5Elements: List<String> =
+            ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
+
+        //Score calculation
+        val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+        var score = 0.0
+        var j = 1.0
+        val len = wordsArray.size
+        val scoreArr = mutableListOf<Double>()
+        val p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE)
+        for (i in wordsArray.indices) {
+            if (wordsArray[i].length > 3) {
+                val m = p.matcher(wordsArray[i])
+                while (m.find()) {
+                    score = -0.7
+                }
+                if (wordsArray[i].uppercase() == wordsArray[i]) {
+                    score += 0.4
+                }
+                if (wordsArray[i].capitalize() == wordsArray[i]) {
+                    score += 0.3
+                }
+                if (i < (len / 3)) {
+                    score += 0.2
+                } else {
+                    if (i < (len * 2 / 3)) {
+                        score += 0.25
+                    }
+                }
+            }
+            scoreArr.add(score)
+            score = 0.0
+        }
+        var adder = 0.6
+        for (i in top5Elements.indices) {
+            for (j in wordsArray.indices) {
+                if (top5Elements[i] == wordsArray[j]) {
+                    scoreArr[j] += adder
+                    adder -= 0.1
+                }
+            }
+        }
+
+        //Setting up max scorers
+        val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
+        val max1 = wordsArray[i1]
+        val max1Score = scoreArr[i1]
+        scoreArr[i1] = 0.0
+        val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
+        val max2 = wordsArray[i2]
+        val max2Score = scoreArr[i2]
+        scoreArr[i2] = 0.0
+        val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
+        val max3 = wordsArray[i3]
+
+        var checker = ""
+        var flagMax = 0
+        var finalProd = ""
+        var finalScore = 0.0
+        for (block in text.textBlocks) {
+            for (line in block.lines) {
+                for (element in line.elements) {
+                    if (max1 == element.text && flagMax == 0) {
+                        finalProd = block.text
+                        finalScore = max1Score
+                    }
+                    if (max2 == element.text) {
+                        checker = block.text
+                    }
+                    if (checker == block.text && max3 == element.text) {
+                        finalProd = block.text
+                        finalScore = max2Score
+                        flagMax = 1
+                    }
+                }
+            }
+        }
+        return arrayOf(finalProd, finalScore)
+    }
     private fun recognizeTextFromImage() {
 
         //set message and show progress dialog
@@ -117,171 +221,50 @@ class MainActivity : AppCompatActivity() {
                     //get the recognized text
                     val recognizedText = text.text
                     var finalEle = " "
-                    var maxSize : Double = 0.0
 
-                    data class ElementSize(val size: Double, val element: String)
+                    //Function for the best product
+                    val finalProd = extractProduct(text)
 
-                    val ElementSizes = mutableListOf<ElementSize>()
-
-                    for (block in text.textBlocks) {
-                        for (line in block.lines) {
-                            for (element in line.elements) {
-                                var size: Double = 0.0
-                                val corners = element.cornerPoints
-                                if (corners != null && corners.size == 4) {
-                                    val dx1 = (corners[0].x-corners[3].x).toDouble()
-                                    val dy1 = (corners[0].y-corners[3].y).toDouble()
-                                    val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
-                                    val dx2 = (corners[2].x-corners[3].x).toDouble()
-                                    val dy2 = (corners[2].y-corners[3].y).toDouble()
-                                    val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
-                                    size = (len1+len2)*2
-                                }
-                                ElementSizes.add(ElementSize(size, element.text))
-                            }
-                        }
-                    }
-                    val top5Elements:List<String> = ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
-
-                    //Score calculation
-                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
-                    var score = 0.0
-                    var j =1.0
-                    val len = wordsArray.size
-                    val scoreArr = mutableListOf<Double>()
-                    val p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE)
-                    for(i in wordsArray.indices){
-                        if(wordsArray[i].length > 3) {
-                            val m = p.matcher(wordsArray[i])
-                            while(m.find()){
-                                score = -0.7
-                            }
-                            if(wordsArray[i].uppercase() == wordsArray[i]){
-                                score +=0.4
-                            }
-                            if (wordsArray[i].capitalize() == wordsArray[i]) {
-                                score += 0.3
-                            }
-                            if (i<(len/3)) {
-                                score += 0.2
-                            }
-                            else{
-                                if(i<(len*2/3)){
-                                    score+=0.25
-                                }
-                            }
-                        }
-                        scoreArr.add(score)
-                        score = 0.0
-                    }
-                    var adder = 0.6
-                    for(i in top5Elements.indices){
-                        for(j in wordsArray.indices){
-                            if(top5Elements[i] == wordsArray[j]){
-                                scoreArr[j] += adder
-                                adder -= 0.1
-                            }
-                        }
-                    }
-
-                    //Setting up max scorers
-                    val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
-                    val max1 = wordsArray[i1]
-                    scoreArr[i1] = 0.0
-                    val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
-                    val max2 = wordsArray[i2]
-                    scoreArr[i2] = 0.0
-                    val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
-                    val max3 = wordsArray[i3]
-
-                    //Taking the block for product
-                    var checker = ""
-                    var flagMax = 0
-                    var finalProd = ""
-                    for (block in text.textBlocks) {
-                        for (line in block.lines) {
-                            for (element in line.elements) {
-                                if (max1 == element.text && flagMax==0) {
-                                    finalProd = block.text
-                                }
-                                if (max2 == element.text) {
-                                    checker = block.text
-                                }
-                                if(checker==block.text && max3==element.text){
-                                    finalProd = block.text
-                                    flagMax = 1
-                                }
-                            }
-                        }
-                    }
-
-                    //Setting up all the arrays
-                    val scoredString = scoreArr.joinToString(prefix = "[", postfix = "]", separator = ", ")
-                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
-                    val top5elementsInString = top5Elements.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    //Added code due to function
                     val recognizedTextLines = recognizedText.split("\n").toTypedArray()
+                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
                     //MRP recognition
-//                    var mrpValue = "not found"
-////                    val strl = recognizedText.split("\n").toTypedArray()
-////                    for(x in strl) {
-////                        if (x.contains("Rs") || x.contains("MRP") || x.contains("mrp") || x.contains("₹")) {
-////                            mrpValue = x;
-////                        }
-////                        }
-//
-//                    //Date detection
-//                    val dates = extractDates(recognizedText)
-//
-//                    //MRP recognition
-//                    var completeCheck = 1
-//                    for (line in recognizedTextLines) {
-//                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M\.R\.P)\b""",RegexOption.IGNORE_CASE))) {
-//                            extractMrpValue(line)?.let {
-//                                mrpValue = it+" met1"
-//                                completeCheck = 0
-//                            }
+                    var mrpValue = "not found"
+                    val strl = recognizedText.split("\n").toTypedArray()
+//                    for(x in strl) {
+//                        if (x.contains("Rs") || x.contains("MRP") || x.contains("mrp") || x.contains("₹")) {
+//                            mrpValue = x;
 //                        }
-//                    }
-//                    if(completeCheck == 1) {
-//                        val regexDigit = "-?[0-9]+(\\.[0-9]+)?".toRegex()
-//                        for (x in wordsArray.indices) {
-//                            if (wordsArray[x].matches(regexDigit)) {
-//                                if (x.toDouble() in 5.0..10000.0) {
-//                                    showToast("hi")
-//                                    //mrpValue = mrpValue + " " + wordsArray[x].toString()
-//                                    mrpValue = wordsArray[x].toString()
-//                                }
-//                            }
 //                        }
-//                    }
-                    var resBlock = ""
-                    val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
 
-                    for (block in text.textBlocks) {
-                        outer@ for (line in block.lines) {
-                            for (element in line.elements) {
-                                val s = element.text
-
-                                if (dateRegex.containsMatchIn(s) ||
-                                    s.contains("Rs.", ignoreCase = true) ||
-                                    s.contains("MRP", ignoreCase = true) ||
-                                    s.contains("₹") ||
-                                    s.contains("/") ||
-                                    s.contains("M.R.P", ignoreCase = true) ||
-                                    s.contains("Rs", ignoreCase = true)) {
-
-                                    resBlock += block.text
-                                    break@outer
+                    var completeCheck = 1
+                    for (line in recognizedTextLines) {
+                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|)\b""",RegexOption.IGNORE_CASE))) {
+                            extractMrpValue(line)?.let {
+                                mrpValue = it+" met1"
+                                completeCheck = 0
+                            }
+                        }
+                    }
+                    if(completeCheck == 1) {
+                        val regexDigit = "-?[0-9]+(\\.[0-9]+)?".toRegex()
+                        for (x in wordsArray.indices) {
+                            if (wordsArray[x].matches(regexDigit)) {
+                                if (x.toDouble() in 5.0..10000.0) {
+                                    //mrpValue = mrpValue + " " + wordsArray[x].toString()
+                                    mrpValue = wordsArray[x].toString()
                                 }
                             }
                         }
                     }
 
-
+                    //Date detection
+                    val dates = extractDates(wordsString)
 
                     //Final Printing
-//                    finalEle = "recognisedText is"+ "\n" + recognizedText +"\n\n"+
+//                    finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+
 //                            "Scored Array is"+"\n"+scoredString+"\n\n"+
 //                            "Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+
 //                            "Product is:"+finalProd+"\n\n"+
@@ -289,9 +272,10 @@ class MainActivity : AppCompatActivity() {
 //                            "MRP: ₹" + mrpValue + "\n\n"+
 //                            "Manufacturing date: " + dates.first + "\n\n"+
 //                            "Expiry date: " + dates.second
-
-                    finalEle = "recognisedText is"+ "\n" + recognizedText +"\n\n"+
-                               "Block: " + resBlock
+                    finalEle = "Product is:"+finalProd[0] + "\n"+finalProd[1] + "\n\n"+
+                            "MRP: ₹" + mrpValue + "\n\n"+
+                            "Manufacturing date: " + dates.first + "\n\n"+
+                            "Expiry date: " + dates.second
 
                     recognizedTextEt.setText(finalEle)
 
@@ -310,66 +294,66 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-//    fun extractMrpValue(line: String): String? {
-//        val mrpPattern = """\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]?\s*(₹|Rs.)?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
-//        val matchResult = mrpPattern.find(line)
-//        return matchResult?.groupValues?.get(1)?.trim()
-//    }
-//
-//
-//    private fun extractDates(text: String): Pair<String?, String?> {
-//        val potentialDates = mutableListOf<String>()
-//
-//        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
-//        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
-//        val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
-//
-//
-//        // Find all potential dates using the regex
-//        dateRegex.findAll(text).forEach { match ->
-//            potentialDates.add(match.value)
-//            Log.i(TAG, match.value)
-//        }
-//
-//        // If no dates are found, return null for both
-//        if (potentialDates.isEmpty()) {
-//            return null to null
-//        }
-//
-//        // Helper function to convert date strings to Date objects for comparison
-//        fun parseDate(dateStr: String): Date? {
-//            val formats = listOf(
-//                SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
-//                SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
-//                SimpleDateFormat("ddMMMyy", Locale.ENGLISH),
-//                SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
-//                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
-//                SimpleDateFormat("dd MM yyyy", Locale.ENGLISH),  // Added spaces version
-//                SimpleDateFormat("dd MM yy", Locale.ENGLISH),     // Added spaces version
-//                SimpleDateFormat("dd MMM yy", Locale.ENGLISH)
-//            )
-//
-//            for (format in formats) {
-//                try {
-//                    return format.parse(dateStr)
-//                } catch (e: Exception) {
-//                    // Continue to the next format
-//                }
-//            }
-//            return null
-//        }
-//
-//        // Sort the potential dates by their parsed Date objects
-//        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
-//            .sortedBy { it.second }
-//            .map { it.first }
-//
-//        // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
-//        val manufacturingDate = sortedDates.firstOrNull()
-//        val expiryDate = sortedDates.getOrNull(1)
-//
-//        return manufacturingDate to expiryDate
-//    }
+    fun extractMrpValue(line: String): String? {
+        val mrpPattern = """\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]\s*₹?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
+        val matchResult = mrpPattern.find(line)
+        return matchResult?.groupValues?.get(1)?.trim()
+    }
+
+
+    private fun extractDates(text: String): Pair<String?, String?> {
+        val potentialDates = mutableListOf<String>()
+
+        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
+        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
+        val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
+
+
+        // Find all potential dates using the regex
+        dateRegex.findAll(text).forEach { match ->
+            potentialDates.add(match.value)
+            Log.i(TAG, match.value)
+        }
+
+        // If no dates are found, return null for both  
+        if (potentialDates.isEmpty()) {
+            return null to null
+        }
+
+        // Helper function to convert date strings to Date objects for comparison
+        fun parseDate(dateStr: String): Date? {
+            val formats = listOf(
+                SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
+                SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
+                SimpleDateFormat("ddMMMyy", Locale.ENGLISH),
+                SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
+                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
+                SimpleDateFormat("dd MM yyyy", Locale.ENGLISH),  // Added spaces version
+                SimpleDateFormat("dd MM yy", Locale.ENGLISH),     // Added spaces version
+                SimpleDateFormat("dd MMM yy", Locale.ENGLISH)
+            )
+
+            for (format in formats) {
+                try {
+                    return format.parse(dateStr)
+                } catch (e: Exception) {
+                    // Continue to the next format
+                }
+            }
+            return null
+        }
+
+        // Sort the potential dates by their parsed Date objects
+        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
+            .sortedBy { it.second }
+            .map { it.first }
+
+        // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
+        val manufacturingDate = sortedDates.firstOrNull()
+        val expiryDate = sortedDates.getOrNull(1)
+
+        return manufacturingDate to expiryDate
+    }
 
     private fun showInputImageDialog() {
 
