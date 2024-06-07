@@ -6,13 +6,11 @@ import android.Manifest
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.ContentValues
-import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.Menu
 import android.widget.EditText
 import android.widget.ImageView
@@ -27,9 +25,6 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.regex.Pattern
 import kotlin.math.sqrt
 
@@ -227,49 +222,76 @@ class MainActivity : AppCompatActivity() {
                     val recognizedTextLines = recognizedText.split("\n").toTypedArray()
 
                     //MRP recognition
-                    var mrpValue = "not found"
-                    val strl = recognizedText.split("\n").toTypedArray()
-//                    for(x in strl) {
-//                        if (x.contains("Rs") || x.contains("MRP") || x.contains("mrp") || x.contains("₹")) {
-//                            mrpValue = x;
+//                    var mrpValue = "not found"
+////                    val strl = recognizedText.split("\n").toTypedArray()
+////                    for(x in strl) {
+////                        if (x.contains("Rs") || x.contains("MRP") || x.contains("mrp") || x.contains("₹")) {
+////                            mrpValue = x;
+////                        }
+////                        }
+//
+//                    //Date detection
+//                    val dates = extractDates(recognizedText)
+//
+//                    //MRP recognition
+//                    var completeCheck = 1
+//                    for (line in recognizedTextLines) {
+//                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M\.R\.P)\b""",RegexOption.IGNORE_CASE))) {
+//                            extractMrpValue(line)?.let {
+//                                mrpValue = it+" met1"
+//                                completeCheck = 0
+//                            }
 //                        }
+//                    }
+//                    if(completeCheck == 1) {
+//                        val regexDigit = "-?[0-9]+(\\.[0-9]+)?".toRegex()
+//                        for (x in wordsArray.indices) {
+//                            if (wordsArray[x].matches(regexDigit)) {
+//                                if (x.toDouble() in 5.0..10000.0) {
+//                                    showToast("hi")
+//                                    //mrpValue = mrpValue + " " + wordsArray[x].toString()
+//                                    mrpValue = wordsArray[x].toString()
+//                                }
+//                            }
 //                        }
+//                    }
+                    var resBlock = ""
+                    val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
 
-                    //MRP recognition
-                    var completeCheck = 1
-                    for (line in recognizedTextLines) {
-                        if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|)\b""",RegexOption.IGNORE_CASE))) {
-                            extractMrpValue(line)?.let {
-                                mrpValue = it+" met1"
-                                completeCheck = 0
-                            }
-                        }
-                    }
-                    if(completeCheck == 1) {
-                        val regexDigit = "-?[0-9]+(\\.[0-9]+)?".toRegex()
-                        for (x in wordsArray.indices) {
-                            if (wordsArray[x].matches(regexDigit)) {
-                                if (x.toDouble() in 5.0..10000.0) {
-                                    showToast("hi")
-                                    //mrpValue = mrpValue + " " + wordsArray[x].toString()
-                                    mrpValue = wordsArray[x].toString()
+                    for (block in text.textBlocks) {
+                        outer@ for (line in block.lines) {
+                            for (element in line.elements) {
+                                val s = element.text
+
+                                if (dateRegex.containsMatchIn(s) ||
+                                    s.contains("Rs.", ignoreCase = true) ||
+                                    s.contains("MRP", ignoreCase = true) ||
+                                    s.contains("₹") ||
+                                    s.contains("/") ||
+                                    s.contains("M.R.P", ignoreCase = true) ||
+                                    s.contains("Rs", ignoreCase = true)) {
+
+                                    resBlock += block.text
+                                    break@outer
                                 }
                             }
                         }
                     }
 
-                    //Date detection
-                    val dates = extractDates(wordsString)
+
 
                     //Final Printing
-                    finalEle = "recognisedText is"+ "\n" +wordsString +"\n\n"+
-                            "Scored Array is"+"\n"+scoredString+"\n\n"+
-                            "Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+
-                            "Product is:"+finalProd+"\n\n"+
-                            "Top 5 elements in size"+top5elementsInString + "\n\n"+
-                            "MRP: ₹" + mrpValue + "\n\n"+
-                            "Manufacturing date: " + dates.first + "\n\n"+
-                            "Expiry date: " + dates.second
+//                    finalEle = "recognisedText is"+ "\n" + recognizedText +"\n\n"+
+//                            "Scored Array is"+"\n"+scoredString+"\n\n"+
+//                            "Max elements are"+"\n"+max1+ "  " +max2 + "  "+ max3 + "\n\n"+
+//                            "Product is:"+finalProd+"\n\n"+
+//                            "Top 5 elements in size"+top5elementsInString + "\n\n"+
+//                            "MRP: ₹" + mrpValue + "\n\n"+
+//                            "Manufacturing date: " + dates.first + "\n\n"+
+//                            "Expiry date: " + dates.second
+
+                    finalEle = "recognisedText is"+ "\n" + recognizedText +"\n\n"+
+                               "Block: " + resBlock
 
                     recognizedTextEt.setText(finalEle)
 
@@ -288,66 +310,66 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun extractMrpValue(line: String): String? {
-        val mrpPattern = """\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]\s*₹?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
-        val matchResult = mrpPattern.find(line)
-        return matchResult?.groupValues?.get(1)?.trim()
-    }
-
-
-    private fun extractDates(text: String): Pair<String?, String?> {
-        val potentialDates = mutableListOf<String>()
-
-        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
-        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
-        val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
-
-
-        // Find all potential dates using the regex
-        dateRegex.findAll(text).forEach { match ->
-            potentialDates.add(match.value)
-            Log.i(TAG, match.value)
-        }
-
-        // If no dates are found, return null for both
-        if (potentialDates.isEmpty()) {
-            return null to null
-        }
-
-        // Helper function to convert date strings to Date objects for comparison
-        fun parseDate(dateStr: String): Date? {
-            val formats = listOf(
-                SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
-                SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
-                SimpleDateFormat("ddMMMyy", Locale.ENGLISH),
-                SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
-                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
-                SimpleDateFormat("dd MM yyyy", Locale.ENGLISH),  // Added spaces version
-                SimpleDateFormat("dd MM yy", Locale.ENGLISH),     // Added spaces version
-                SimpleDateFormat("dd MMM yy", Locale.ENGLISH)
-            )
-
-            for (format in formats) {
-                try {
-                    return format.parse(dateStr)
-                } catch (e: Exception) {
-                    // Continue to the next format
-                }
-            }
-            return null
-        }
-
-        // Sort the potential dates by their parsed Date objects
-        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
-            .sortedBy { it.second }
-            .map { it.first }
-
-        // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
-        val manufacturingDate = sortedDates.firstOrNull()
-        val expiryDate = sortedDates.getOrNull(1)
-
-        return manufacturingDate to expiryDate
-    }
+//    fun extractMrpValue(line: String): String? {
+//        val mrpPattern = """\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]?\s*(₹|Rs.)?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
+//        val matchResult = mrpPattern.find(line)
+//        return matchResult?.groupValues?.get(1)?.trim()
+//    }
+//
+//
+//    private fun extractDates(text: String): Pair<String?, String?> {
+//        val potentialDates = mutableListOf<String>()
+//
+//        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
+//        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
+//        val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
+//
+//
+//        // Find all potential dates using the regex
+//        dateRegex.findAll(text).forEach { match ->
+//            potentialDates.add(match.value)
+//            Log.i(TAG, match.value)
+//        }
+//
+//        // If no dates are found, return null for both
+//        if (potentialDates.isEmpty()) {
+//            return null to null
+//        }
+//
+//        // Helper function to convert date strings to Date objects for comparison
+//        fun parseDate(dateStr: String): Date? {
+//            val formats = listOf(
+//                SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
+//                SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
+//                SimpleDateFormat("ddMMMyy", Locale.ENGLISH),
+//                SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
+//                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
+//                SimpleDateFormat("dd MM yyyy", Locale.ENGLISH),  // Added spaces version
+//                SimpleDateFormat("dd MM yy", Locale.ENGLISH),     // Added spaces version
+//                SimpleDateFormat("dd MMM yy", Locale.ENGLISH)
+//            )
+//
+//            for (format in formats) {
+//                try {
+//                    return format.parse(dateStr)
+//                } catch (e: Exception) {
+//                    // Continue to the next format
+//                }
+//            }
+//            return null
+//        }
+//
+//        // Sort the potential dates by their parsed Date objects
+//        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
+//            .sortedBy { it.second }
+//            .map { it.first }
+//
+//        // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
+//        val manufacturingDate = sortedDates.firstOrNull()
+//        val expiryDate = sortedDates.getOrNull(1)
+//
+//        return manufacturingDate to expiryDate
+//    }
 
     private fun showInputImageDialog() {
 
