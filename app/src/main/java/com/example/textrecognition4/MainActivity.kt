@@ -81,8 +81,8 @@ class MainActivity : AppCompatActivity() {
 
 
         //init arrays of permissions required for camera,gallery
-        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_VIDEO)
-        storagePermissions = arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
+        cameraPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        storagePermissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Please wait")
@@ -107,6 +107,14 @@ class MainActivity : AppCompatActivity() {
             }
             else{
                 //recognizeTextFromImage()
+
+                arrayOfProds.clear()
+                num = 0
+                maxScore = 0.0
+                finalResult = ""
+                finalProduct = ""
+                progressDialog.setMessage("Recognizing text")
+                progressDialog.show()
                 val arrayBitmaps = getVideoFrame(context = baseContext)
 
             }
@@ -367,6 +375,7 @@ private fun extractMrpValue(text: String): String{
                     {
                         finalResult = "ProductArray\n" + arrayOfProds.toString()+"\n\n\nProduct: "+finalProduct+"\n\n\nDate:"+dates+"\n\n\nMRP:"+mrpValue
                         recognizedTextEt.setText(finalResult)
+                        progressDialog.dismiss()
 
                     }
 
@@ -514,6 +523,7 @@ private fun extractMrpValue(text: String): String{
         val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
         //intent.putExtra(MediaStore.EXTRA_OUTPUT,imageUri)
         intent.putExtra(MediaStore.EXTRA_OUTPUT, videoUri)
+        recognizedTextEt.setText("")
         cameraActivityResultLauncher.launch(intent)
     }
 
@@ -535,14 +545,14 @@ private fun extractMrpValue(text: String): String{
 
     private fun checkStoragePermission(): Boolean{
 
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
         //return true
     }
 
     private fun checkCameraPermissions() : Boolean{
 
         val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
+        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
 
         return cameraResult && storageResult
         //return true
