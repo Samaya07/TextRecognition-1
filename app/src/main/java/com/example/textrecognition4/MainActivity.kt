@@ -65,6 +65,7 @@ class MainActivity : AppCompatActivity() {
     private var arrayBitmaps = arrayListOf<Bitmap>()
     private var frameIndex = 0
     private var maxScore = 0.0
+    private var resBlock = arrayListOf<String>()
     private lateinit var finalResult: String
     private lateinit var finalProduct: String
 
@@ -109,6 +110,7 @@ class MainActivity : AppCompatActivity() {
 
                 arrayOfProds.clear()
                 arrayBitmaps.clear()
+                resBlock.clear()
                 frameIndex = 0
                 maxScore = 0.0
                 finalResult = ""
@@ -241,7 +243,7 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     s.contains("Rs.", ignoreCase = true) ||
                     s.contains("MRP", ignoreCase = true) ||
                     s.contains("₹") ||
-                    s.contains("/") ||
+                  //  s.contains("/") ||
                     s.contains("M.R.P", ignoreCase = true) ||
                     s.contains("Rs", ignoreCase = true)) {
 
@@ -284,8 +286,10 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     recText.add(recognizedText)
                     arrayOfProds.add(recText)*/
                    //MRP and Date Detection code
-                    val resBlock = extractDateMrpBlock(text)
-                    arrayOfProds.add(resBlock)
+                    val adderBlock = extractDateMrpBlock(text).toString()
+                    if(adderBlock!="[]") {
+                        resBlock += adderBlock + "\n"
+                    }
                     val result = extractProduct(text)
                     arrayOfProds.add(result)
                     //Picking max score product
@@ -300,7 +304,7 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     if(frameIndex == arrayBitmaps.size)
                     {
                         finalResult =
-                            "ProductArray\n$arrayOfProds\n\n\nProduct: $finalProduct"
+                            "ProductArray\n$arrayOfProds\n\n\nPrices Blocks:$resBlock\n\n\nProduct: $finalProduct\n\n\nPrice:\n"+ resBlock[0]
                         recognizedTextEt.setText(finalResult)
                         progressDialog.dismiss()
 
