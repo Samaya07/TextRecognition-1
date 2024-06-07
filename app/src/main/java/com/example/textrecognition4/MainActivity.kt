@@ -225,106 +225,36 @@ class MainActivity : AppCompatActivity() {
         return arrayListOf(finalProd, finalScore)
     }
 //MRP Function
-private fun extractMrpValue(text: String): String{
-//        val recognizedText = text
-//        var finalEle = " "
-//
-//        //Added code due to function
-//        val recognizedTextLines = recognizedText.split("\n").toTypedArray()
-//        val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
-//        val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
-//
-//        //MRP recognition
-//        var mrpValue = "not found"
-//        val strl = recognizedText.split("\n").toTypedArray()
-//    //                    for(x in strl) {
-//    //                        if (x.contains("Rs") || x.contains("MRP") || x.contains("mrp") || x.contains("₹")) {
-//    //                            mrpValue = x;
-//    //                        }
-//    //                        }
-//
-//        var completeCheck = 1
-//        for (line in recognizedTextLines) {
-//            if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|)\b""",RegexOption.IGNORE_CASE))) {
-//                extractMrpValue(line)?.let {
-//                    mrpValue = it+" met1"
-//                    completeCheck = 0
-//                }
-//            }
-//        }
-//        if(completeCheck == 1) {
-//            val regexDigit = "-?[0-9]+(\\.[0-9]+)?".toRegex()
-//            for (x in wordsArray.indices) {
-//                if (wordsArray[x].matches(regexDigit)) {
-//                    if (x.toDouble() in 5.0..10000.0) {
-//                        //mrpValue = mrpValue + " " + wordsArray[x].toString()
-//                        mrpValue = wordsArray[x].toString()
-//                    }
-//                }
-//            }
-//    }
-        var mrpValue = "0"
-    return mrpValue
 
-//    val mrpPattern = """\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]\s*₹?\s*(\d+(?:\.\d+)?)""".toRegex(RegexOption.IGNORE_CASE)
-//        val matchResult = mrpPattern.find(line)
-//        return matchResult?.groupValues?.get(1)?.trim()
-    }
 
 //Date Function
-    private fun extractDates(text: String): Pair<String?, String?> {
-        val potentialDates = mutableListOf<String>()
+private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
+    val resBlock = ArrayList<Any>()
+    val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
 
-        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMyy, DD.MM.YYYY, and DD.MM.YY formats
-        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
-        val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
+    for (block in text.textBlocks) {
+        outer@ for (line in block.lines) {
+            for (element in line.elements) {
+                val s = element.text
 
+                if (dateRegex.containsMatchIn(s) ||
+                    s.contains("Rs.", ignoreCase = true) ||
+                    s.contains("MRP", ignoreCase = true) ||
+                    s.contains("₹") ||
+                    s.contains("/") ||
+                    s.contains("M.R.P", ignoreCase = true) ||
+                    s.contains("Rs", ignoreCase = true)) {
 
-        // Find all potential dates using the regex
-        dateRegex.findAll(text).forEach { match ->
-            potentialDates.add(match.value)
-            Log.i(TAG, match.value)
-        }
-
-        // If no dates are found, return null for both
-        if (potentialDates.isEmpty()) {
-            return null to null
-        }
-
-        // Helper function to convert date strings to Date objects for comparison
-        fun parseDate(dateStr: String): Date? {
-            val formats = listOf(
-                SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
-                SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
-                SimpleDateFormat("ddMMMyy", Locale.ENGLISH),
-                SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
-                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
-                SimpleDateFormat("dd MM yyyy", Locale.ENGLISH),  // Added spaces version
-                SimpleDateFormat("dd MM yy", Locale.ENGLISH),     // Added spaces version
-                SimpleDateFormat("dd MMM yy", Locale.ENGLISH)
-            )
-
-            for (format in formats) {
-                try {
-                    return format.parse(dateStr)
-                } catch (e: Exception) {
-                    // Continue to the next format
+                    resBlock.add(block.text)
+                    break@outer
                 }
             }
-            return null
         }
-
-        // Sort the potential dates by their parsed Date objects
-        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
-            .sortedBy { it.second }
-            .map { it.first }
-
-        // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
-        val manufacturingDate = sortedDates.firstOrNull()
-        val expiryDate = sortedDates.getOrNull(1)
-
-        return manufacturingDate to expiryDate
     }
+    Log.i(TAG, resBlock.toString())
+    return resBlock
+}
+
 
     private fun recognizeTextFromImage(bitmap: Bitmap) {
 
@@ -338,16 +268,24 @@ private fun extractMrpValue(text: String): String{
                 .addOnSuccessListener { text ->
 
                     //Redundant Declaration
-                    val recognizedText = text.toString()
-                    val recognizedTextLines = recognizedText.split("\n").toTypedArray()
-                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
-                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+                    //val recognizedText = text.toString()
+                    //val recognizedTextLines = recognizedText.split("\n").toTypedArray()
+                    //val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+                    //val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
                     //Date detection
-                    val dates = extractDates(wordsString)
+                    //val dates = extractDates(wordsString)
                     //MRP detection
-                    val mrpValue = extractMrpValue(text.toString())
+                    //val mrpValue = extractMrpValue(text.toString())
                     //Product Detection
+                    //Recognised text for debugging
+                    /*val recognizedText = text.text
+                    val recText = ArrayList<Any>()
+                    recText.add(recognizedText)
+                    arrayOfProds.add(recText)*/
+                   //MRP and Date Detection code
+                    val resBlock = extractDateMrpBlock(text)
+                    arrayOfProds.add(resBlock)
                     val result = extractProduct(text)
                     arrayOfProds.add(result)
                     //Picking max score product
@@ -362,7 +300,7 @@ private fun extractMrpValue(text: String): String{
                     if(frameIndex == arrayBitmaps.size)
                     {
                         finalResult =
-                            "ProductArray\n$arrayOfProds\n\n\nProduct: $finalProduct\n\n\nDate:$dates\n\n\nMRP:$mrpValue"
+                            "ProductArray\n$arrayOfProds\n\n\nProduct: $finalProduct"
                         recognizedTextEt.setText(finalResult)
                         progressDialog.dismiss()
 
@@ -534,14 +472,14 @@ private fun extractMrpValue(text: String): String{
 
     private fun checkStoragePermission(): Boolean{
 
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
         //return true
     }
 
     private fun checkCameraPermissions() : Boolean{
 
         val cameraResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        val storageResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
 
         return cameraResult && storageResult
         //return true
