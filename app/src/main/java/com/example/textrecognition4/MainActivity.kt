@@ -40,9 +40,9 @@ import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var inputImageBtn:MaterialButton
+    private lateinit var inputVideoBtn:MaterialButton
     private lateinit var recognizeTextBtn:MaterialButton
-    private lateinit var videoIv: VideoView
+    private lateinit var videoV: VideoView
     private lateinit var recognizedTextEt : EditText
 
     private companion object {
@@ -62,21 +62,21 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var textRecognizer: TextRecognizer
     private var arrayOfProds = arrayListOf<ArrayList<Any>>()
+    private var arrayBitmaps = arrayListOf<Bitmap>()
     private var millis = 0
     private var num = 0
     private var maxScore = 0.0
-    private var finalResult = ""
-    private var finalProduct = ""
+    private lateinit var finalResult: String
+    private lateinit var finalProduct: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         //init UI views
-        inputImageBtn = findViewById(R.id.inputImageBtn)
+        inputVideoBtn = findViewById(R.id.inputVideoBtn)
         recognizeTextBtn = findViewById(R.id.recognizeTextBtn)
-        //imageIv = findViewById(R.id.imageIv)
-        videoIv = findViewById(R.id.videoIv)
+        videoV = findViewById(R.id.videoV)
         recognizedTextEt = findViewById(R.id.recognizedTextEt)
 
 
@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
 
         //handle click, show input image dialog
 
-        inputImageBtn.setOnClickListener {
+        inputVideoBtn.setOnClickListener {
             showInputImageDialog()
         }
 
@@ -109,13 +109,14 @@ class MainActivity : AppCompatActivity() {
                 //recognizeTextFromImage()
 
                 arrayOfProds.clear()
+                arrayBitmaps.clear()
                 num = 0
                 maxScore = 0.0
                 finalResult = ""
                 finalProduct = ""
                 progressDialog.setMessage("Recognizing text")
                 progressDialog.show()
-                val arrayBitmaps = getVideoFrame(context = baseContext)
+                arrayBitmaps = getVideoFrame(context = baseContext)
 
             }
         }
@@ -126,11 +127,11 @@ class MainActivity : AppCompatActivity() {
 
         data class ElementSize(val size: Double, val element: String)
 
-        val ElementSizes = mutableListOf<ElementSize>()
+        val elementSizes = mutableListOf<ElementSize>()
         for (block in text.textBlocks) {
             for (line in block.lines) {
                 for (element in line.elements) {
-                    var size: Double = 0.0
+                    var size = 0.0
                     val corners = element.cornerPoints
                     if (corners != null && corners.size == 4) {
                         val dx1 = (corners[0].x - corners[3].x).toDouble()
@@ -141,12 +142,12 @@ class MainActivity : AppCompatActivity() {
                         val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
                         size = (len1 + len2) * 2
                     }
-                    ElementSizes.add(ElementSize(size, element.text))
+                    elementSizes.add(ElementSize(size, element.text))
                 }
             }
         }
         val top5Elements: List<String> =
-            ElementSizes.sortedByDescending { it.size }.take(3).map { it.element }
+            elementSizes.sortedByDescending { it.size }.take(3).map { it.element }
 
         //Score calculation
         val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
@@ -275,7 +276,7 @@ private fun extractMrpValue(text: String): String{
     private fun extractDates(text: String): Pair<String?, String?> {
         val potentialDates = mutableListOf<String>()
 
-        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
+        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMyy, DD.MM.YYYY, and DD.MM.YY formats
         //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
         val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
 
@@ -328,25 +329,14 @@ private fun extractMrpValue(text: String): String{
 
     private fun recognizeTextFromImage(bitmap: Bitmap) {
 
-        //set message and show progress dialog
-        //progressDialog.setMessage("Preparing image")
-        //progressDialog.show()
 
         try{
-            //Log.i(TAG,len.toString())
             val inputImage = InputImage.fromBitmap(bitmap, 0)
 
-            //val inputImage = InputImage.fromFilePath(this, videoUri!!)
-            //image prepared, we are about to start text recognition process, change progress message
-            //progressDialog.setMessage("Recognizing text")
 
             //start text recognition process from image
-           // for(i in 0..(len-1)) {
-             //   val inputImage = InputImage.fromBitmap(bitmapV[i],0)
-            val testTaskResult = textRecognizer.process(inputImage)
+            textRecognizer.process(inputImage)
                 .addOnSuccessListener { text ->
-                        //process completed, dismiss dialog
-                       // progressDialog.dismiss()
 
                     //Redundant Declaration
                     val recognizedText = text.toString()
@@ -373,7 +363,8 @@ private fun extractMrpValue(text: String): String{
                     num += 1
                     if(num == (millis/1000)*5)
                     {
-                        finalResult = "ProductArray\n" + arrayOfProds.toString()+"\n\n\nProduct: "+finalProduct+"\n\n\nDate:"+dates+"\n\n\nMRP:"+mrpValue
+                        finalResult =
+                            "ProductArray\n$arrayOfProds\n\n\nProduct: $finalProduct\n\n\nDate:$dates\n\n\nMRP:$mrpValue"
                         recognizedTextEt.setText(finalResult)
                         progressDialog.dismiss()
 
@@ -404,7 +395,6 @@ private fun extractMrpValue(text: String): String{
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(context, videoUri)
-            //bitmap = retriever.getFrameAtTime(time)
 
             //Create a new Media Player
             val mp: MediaPlayer = MediaPlayer.create(baseContext, videoUri)
@@ -441,7 +431,7 @@ private fun extractMrpValue(text: String): String{
     private fun showInputImageDialog() {
 
         //init PopupMenu param 1 is context, param 2 is UI View where you want to show PopupMenu
-        val popupMenu = PopupMenu(this, inputImageBtn)
+        val popupMenu = PopupMenu(this, inputVideoBtn)
 
         //Add items Camera, Gallery to PopupMenu, param 2 is menu id, param 3 is position of this menu item in menu items list, param 4 is title of the menu
 
@@ -499,9 +489,11 @@ private fun extractMrpValue(text: String): String{
                 val data = result.data
                 //imageUri = data!!.data
                 videoUri = data!!.data
+                recognizedTextEt.text = null
 
                // imageIv.setImageURI(imageUri)
-                videoIv.setVideoURI((videoUri))
+                videoV.setVideoURI((videoUri))
+                videoV.start()
             }
             else
             {
@@ -523,7 +515,7 @@ private fun extractMrpValue(text: String): String{
         val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
         //intent.putExtra(MediaStore.EXTRA_OUTPUT,imageUri)
         intent.putExtra(MediaStore.EXTRA_OUTPUT, videoUri)
-        recognizedTextEt.setText("")
+
         cameraActivityResultLauncher.launch(intent)
     }
 
@@ -532,10 +524,9 @@ private fun extractMrpValue(text: String): String{
             //here we will receive the image, if taken from camera
             if(result.resultCode == Activity.RESULT_OK){
 
-                //image is taken from camera
-                //we already have the image in imageUri using function pickImageCamera
-                //imageIv.setImageURI(imageUri)
-                videoIv.setVideoURI(videoUri)
+                recognizedTextEt.text = null
+                videoV.setVideoURI(videoUri)
+                videoV.start()
             }
             else{
                 //cancelled
