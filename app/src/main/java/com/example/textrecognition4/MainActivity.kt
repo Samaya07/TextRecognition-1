@@ -153,6 +153,7 @@ class MainActivity : AppCompatActivity() {
         //Score calculation
         val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
         var score = 0.0
+        var mscore = 0.0
         //var j = 1.0
         val len = wordsArray.size
         val scoreArr = mutableListOf<Double>()
@@ -177,6 +178,32 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+
+            if(wordsArray[i].toDoubleOrNull()!=null){
+
+                val num = wordsArray[i].toDouble()
+                //1st condition
+                if(2.0<num && num<10000.0){
+                    mscore += 0.35
+                }
+                //2nd condition
+                if(num%5==0.0 || num%10==0.0 || (num-99)%100==0.0 || (num-9)%10==0.0 || num%100==0.0){
+                    mscore +=0.5
+                }
+                //3rd condition
+                if(mrpValue==wordsArray[i]){
+                    mscore += 1
+                }
+                if(2020<num && num<2030){
+                    mscore-=0.3
+                }
+                //4th condition
+                if(wordsArray[i] in blockArray){
+                    mscore+=0.7
+                }
+
+
+
             scoreArr.add(score)
             score = 0.0
         }
