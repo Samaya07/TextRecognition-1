@@ -157,6 +157,21 @@ class MainActivity : AppCompatActivity() {
         //var j = 1.0
         val len = wordsArray.size
         val scoreArr = mutableListOf<Double>()
+        val mscoreArr = mutableListOf<Double>()
+    //4th condition
+        val blockOfMrp = extractDateMrpBlock(text).toString()
+        val blockArray = blockOfMrp.split("(\\s+|:|;)".toRegex()).toTypedArray()
+    //3rd condition MRP function
+        var mrpValue = "nonenull"
+        for (line in recognizedTextLines) {
+            if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|)\b""",RegexOption.IGNORE_CASE))) {
+                extractMrpValue(line)?.let {
+                    mrpValue = it
+                }
+            }
+        }
+
+
         val p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE)
         for (i in wordsArray.indices) {
             if (wordsArray[i].length > 3) {
