@@ -222,7 +222,9 @@ class MainActivity : AppCompatActivity() {
 
 
 
+            mscoreArr.add(mscore)
             scoreArr.add(score)
+            mscore=0.0
             score = 0.0
         }
         var adder = 0.6
@@ -269,7 +271,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        return arrayListOf(finalProd, finalScore)
+        return arrayListOf(finalProd, finalScore, m1, m1Score, mscoreArr, wordsArray, mrpValue)
     }
 //MRP Function
 private fun extractMrpValue(line: String): String? {
