@@ -272,7 +272,11 @@ class MainActivity : AppCompatActivity() {
         return arrayListOf(finalProd, finalScore)
     }
 //MRP Function
-
+private fun extractMrpValue(line: String): String? {
+    val mrpPattern = """""${'"'}(?i)\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]?\s*(\d+(?:\.\d+)?)(?:\s*(₹?))?""${'"'}""".toRegex(RegexOption.IGNORE_CASE)
+    val matchResult = mrpPattern.find(line)
+    return matchResult?.groupValues?.get(1)?.trim()
+}
 
 //Date Function
 private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
