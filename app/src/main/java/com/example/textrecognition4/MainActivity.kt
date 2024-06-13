@@ -65,10 +65,10 @@ class MainActivity : AppCompatActivity() {
     private var arrayBitmaps = arrayListOf<Bitmap>()
     private var frameIndex = 0
     private var maxScore = 0.0
-    private var resBlock = arrayListOf<String>()
+    private var maxMRPScore = 0.0
     private lateinit var finalResult: String
     private lateinit var finalProduct: String
-
+    private lateinit var finalMRP: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -110,11 +110,12 @@ class MainActivity : AppCompatActivity() {
 
                 arrayOfProds.clear()
                 arrayBitmaps.clear()
-                resBlock.clear()
                 frameIndex = 0
                 maxScore = 0.0
+                maxMRPScore = 0.0
                 finalResult = ""
                 finalProduct = ""
+                finalMRP = ""
                 progressDialog.setMessage("Recognizing text")
                 progressDialog.show()
                 arrayBitmaps = getVideoFrame(context = baseContext)
@@ -219,9 +220,6 @@ class MainActivity : AppCompatActivity() {
                     mscore += 0.7
                 }
             }
-
-
-
             mscoreArr.add(mscore)
             scoreArr.add(score)
             mscore=0.0
@@ -248,6 +246,9 @@ class MainActivity : AppCompatActivity() {
         scoreArr[i2] = 0.0
         val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
         val max3 = wordsArray[i3]
+        val j1 = mscoreArr.indexOf(mscoreArr.maxOrNull())
+        val m1 = wordsArray[j1]
+        val m1Score = mscoreArr[j1]
 
         var checker = ""
         var flagMax = 0
@@ -271,7 +272,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        return arrayListOf(finalProd, finalScore, m1, m1Score, mscoreArr, wordsArray, mrpValue)
+        return arrayListOf(finalProd, finalScore, m1, m1Score, mscoreArr)
+            //, wordsArray, mrpValue)
     }
 //MRP Function
 private fun extractMrpValue(line: String): String? {
@@ -319,43 +321,28 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
             //start text recognition process from image
             textRecognizer.process(inputImage)
                 .addOnSuccessListener { text ->
-
-                    //Redundant Declaration
-                    //val recognizedText = text.toString()
-                    //val recognizedTextLines = recognizedText.split("\n").toTypedArray()
-                    //val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
-                    //val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
-
-                    //Date detection
-                    //val dates = extractDates(wordsString)
-                    //MRP detection
-                    //val mrpValue = extractMrpValue(text.toString())
-                    //Product Detection
-                    //Recognised text for debugging
-                    /*val recognizedText = text.text
-                    val recText = ArrayList<Any>()
-                    recText.add(recognizedText)
-                    arrayOfProds.add(recText)*/
-                   //MRP and Date Detection code
-                    val adderBlock = extractDateMrpBlock(text).toString()
-                    if(adderBlock!="[]") {
-                        resBlock += adderBlock + "\n"
-                    }
                     val result = extractProduct(text)
                     arrayOfProds.add(result)
                     //Picking max score product
                     val scorer = result[1].toString()
+                    val Mscore = result[3].toString()
+                    val MscoreArray = result[4]
+                    val MRPscore = Mscore.toDouble()
                     val intScorer = scorer.toDouble()
                     if(intScorer>maxScore){
                         maxScore = intScorer
                         finalProduct = result[0].toString()
+                    }
+                    if(MRPscore>maxMRPScore){
+                        maxMRPScore = MRPscore
+                        finalMRP = result[2].toString()
                     }
                     //Printing final
                     frameIndex += 1
                     if(frameIndex == arrayBitmaps.size)
                     {
                         finalResult =
-                            "ProductArray\n$arrayOfProds\n\n\nPrices Blocks:$resBlock\n\n\nProduct: $finalProduct\n\n\nPrice:\n"+ resBlock[0]
+                            "Product: $finalProduct\n\n\nPrice:\n$finalMRP\n\n\nPrice Array$MscoreArray"
                         recognizedTextEt.setText(finalResult)
                         progressDialog.dismiss()
 
