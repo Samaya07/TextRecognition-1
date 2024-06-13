@@ -152,6 +152,8 @@ class MainActivity : AppCompatActivity() {
 
         //Score calculation
         val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+        val recognizedTextLines = recognizedText.split("\n").toTypedArray()
+
         var score = 0.0
         var mscore = 0.0
         //var j = 1.0
