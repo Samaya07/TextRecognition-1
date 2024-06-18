@@ -297,6 +297,59 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
     return resBlock
 }
 
+    private fun extractDates(text: String): Pair<String?, String?> {
+        val potentialDates = mutableListOf<String>()
+
+        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
+        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
+        val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
+
+
+        // Find all potential dates using the regex
+        dateRegex.findAll(text).forEach { match ->
+            potentialDates.add(match.value)
+            Log.i(TAG, match.value)
+        }
+
+        // If no dates are found, return null for both
+        if (potentialDates.isEmpty()) {
+            return null to null
+        }
+
+        // Helper function to convert date strings to Date objects for comparison
+        fun parseDate(dateStr: String): Date? {
+            val formats = listOf(
+                SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
+                SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
+                SimpleDateFormat("ddMMMyy", Locale.ENGLISH),
+                SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
+                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
+                SimpleDateFormat("dd MM yyyy", Locale.ENGLISH),  // Added spaces version
+                SimpleDateFormat("dd MM yy", Locale.ENGLISH),     // Added spaces version
+                SimpleDateFormat("dd MMM yy", Locale.ENGLISH)
+            )
+
+            for (format in formats) {
+                try {
+                    return format.parse(dateStr)
+                } catch (e: Exception) {
+                    // Continue to the next format
+                }
+            }
+            return null
+        }
+
+        // Sort the potential dates by their parsed Date objects
+        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
+            .sortedBy { it.second }
+            .map { it.first }
+
+        // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
+        val manufacturingDate = sortedDates.firstOrNull()
+        val expiryDate = sortedDates.getOrNull(1)
+
+        return manufacturingDate to expiryDate
+    }
 
     private fun recognizeTextFromImage(bitmap: Bitmap) {
 
