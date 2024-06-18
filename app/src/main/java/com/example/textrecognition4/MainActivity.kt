@@ -378,6 +378,8 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                         maxMRPScore = MRPscore
                         finalMRP = result[2].toString()
                     }
+
+                    val dates = extractDates(wordsString)
                     //val wordsArray = result[5].joinToString(prefix = "[", postfix = "]", separator = ", ")
                     //Printing final
                     frameIndex += 1
