@@ -34,7 +34,6 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.regex.Pattern
 import kotlin.math.sqrt
 
 
@@ -294,12 +293,74 @@ class MainActivity : AppCompatActivity() {
 
         val wordsArrayreturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
-        return arrayListOf(max1, max1Score, m1, m1Score, mscoreArr, wordsArrayreturn,top3MRP)
+    // List of keywords that indicate an MRP value
+    val mrpKeywords = listOf(
+        "MRP", "Rs", "₹", "Incl. of all taxes", "(Incl. of all taxes)",
+        "Incl of all taxes", "taxes", "mrp", "MR", "MRR", "MPP", "MPR", "M.R.P", "Rs.", "Incl. taxes"
+    )
+    val recognizedTextBlocks = text.textBlocks
+
+    // Function to check if a string contains any MRP keyword
+    fun containsMrpKeyword(text: String): Boolean {
+        return mrpKeywords.any { keyword -> text.contains(keyword, ignoreCase = true) }
+    }
+
+    // Function to extract the MRP value
+    fun extractMrpValueNew(text: String): Double? {
+        var num: Double? = null
+        val arr = text.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        for(i in arr.indices) {
+            if(arr[i].toDoubleOrNull() != null && 3 <= arr[i].toDouble() && arr[i].toDouble() <= 1000) {
+                num = arr[i].toDouble()
+                Log.d("MRPExtraction", "Extracted MRP value: $num from element: ${arr[i]}")
+            }
+        }
+        return num
+    }
+
+    var mrpValueNew: Double? = null
+    var keywordBlockIndex: Int? = null
+
+// First, find the block containing any MRP keyword
+    for ((blockIndex, block) in recognizedTextBlocks.withIndex()) {
+        for (line in block.lines) {
+            if (containsMrpKeyword(line.text)) {
+                keywordBlockIndex = blockIndex
+                Log.d("MRPExtraction", "MRP keyword found in block $blockIndex: ${line.text}")
+                break
+            }
+        }
+        if (keywordBlockIndex != null) break
+    }
+
+// If we found a block with an MRP keyword, search for the MRP value in this block and the next few blocks
+    if (keywordBlockIndex != null) {
+        outer@ for (i in keywordBlockIndex until recognizedTextBlocks.size) {
+            val block = recognizedTextBlocks[i]
+            for (line in block.lines) {
+                val mrp = extractMrpValueNew(line.text)
+                if (mrp != null) {
+                    mrpValueNew = mrp
+                    Log.d("MRPExtraction", "Found MRP value: $mrp in block $i: ${line.text}")
+                    break@outer
+                }
+            }
+            if (mrpValueNew != null) break@outer
+        }
+    }
+// Output the found MRP value
+    Log.d("MRPExtraction", "Final MRP Value: $mrpValueNew")
+
+
+
+
+    return arrayListOf(max1, max1Score, m1, m1Score, mscoreArr, wordsArrayreturn,top3MRP, mrpValueNew.toString())
             //, wordsArray, mrpValue)
     }
 //MRP Function
 private fun extractMrpValue(line: String): String? {
-    val mrpPattern = """""${'"'}(?i)\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]?\s*(\d+(?:\.\d+)?)(?:\s*(₹?))?""${'"'}""".toRegex(RegexOption.IGNORE_CASE)
+   // val mrpPattern = """""${'"'}(?i)\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]?\s*(\d+(?:\.\d+)?)(?:\s*(₹?))?""${'"'}""".toRegex(RegexOption.IGNORE_CASE)
+    val mrpPattern = """(?i)\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]?\s*(\d+(?:\.\d+)?)(?:\s*(₹?))?""".toRegex(RegexOption.IGNORE_CASE)
     val matchResult = mrpPattern.find(line)
     return matchResult?.groupValues?.get(1)?.trim()
 }
@@ -429,8 +490,9 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     frameIndex += 1
                     if(frameIndex == arrayBitmaps.size)
                     {
-                        finalResult =
-                            "Product: $finalProduct\n\n\nPrice:\n$finalMRP\n\n\nPrice Array$MscoreArray\n\nMRP Score:$maxMRPScore\n\n\nWords Array:$wordsArrayDisplay\n\n\nDate is: ${dates.first}\n${dates.second}\n\n${result[6]}"
+//                        finalResult =
+//                            "Product: $finalProduct\n\n\nPrice:\n$finalMRP\n\n\nPrice Array$MscoreArray\n\nMRP Score:$maxMRPScore\n\n\nWords Array:$wordsArrayDisplay\n\n\nDate is: ${dates.first}\n${dates.second}\n\n${result[6]}"
+                          finalResult = "MRP:${result[7]}"
                         recognizedTextEt.setText(finalResult)
                         progressDialog.dismiss()
 
