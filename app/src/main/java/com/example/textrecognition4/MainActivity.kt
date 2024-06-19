@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     private var maxScore = 0.0
     private var maxMRPScore = 0.0
     private lateinit var finalResult: String
+    private lateinit var finalString: String
     private lateinit var finalProduct: String
     private lateinit var finalMRP: String
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -116,6 +117,7 @@ class MainActivity : AppCompatActivity() {
                 finalResult = ""
                 finalProduct = ""
                 finalMRP = ""
+                finalString = ""
                 progressDialog.setMessage("Recognizing text")
                 progressDialog.show()
                 arrayBitmaps = getVideoFrame(context = baseContext)
@@ -209,7 +211,7 @@ class MainActivity : AppCompatActivity() {
                     score += 0.4
                 }
                 if (wordsArray[i].capitalize() == wordsArray[i]) {
-                    score += 0.3
+                    score += 0.35
                 }
                 if (i < (len / 3)) {
                     score += 0.2
@@ -252,7 +254,7 @@ class MainActivity : AppCompatActivity() {
             mscore=0.0
             score = 0.0
         }
-        var adder = 0.6
+        var adder = 0.7
         for (i in top5Elements.indices) {
             for (j in wordsArray.indices) {
                 if (top5Elements[i] == wordsArray[j])
@@ -400,17 +402,17 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                 .addOnSuccessListener { text ->
                     val result = extractProduct(text)
                     arrayOfProds.add(result)
-
                     val recognizedText = text.text
                     val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
                     val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
-
+//date function
+                    val dates = extractDates(wordsString)
                     //Picking max score product
                     val scorer = result[1].toString()
                     val Mscore = result[3].toString()
-                    var wordsArrayDisplay = result[5]
-                    var MscoreArray = result[4]
-                    var MaxSizesMRP = result[6]
+//                    val wordsArrayDisplay = result[5]
+//                    val MscoreArray = result[4]
+//                    val MaxSizesMRP = result[6]
                     val MRPscore = Mscore.toDouble()
                     val intScorer = scorer.toDouble()
                     if(intScorer>maxScore){
@@ -419,15 +421,9 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     }
                     if(MRPscore>maxMRPScore){
                         maxMRPScore = MRPscore
-                        finalMRP = result[2].toString()
-                        wordsArrayDisplay = result[5]
-                        MaxSizesMRP = result[6]
-                        MscoreArray = result[4]
-
-
+                        //finalMRP = result[2].toString()
+                        finalString = "Price:\n${result[2].toString()}\n\n\nPrice Array${result[4]}\n\nMRP Score:$MRPscore\n\n\nWords Array:${result[5]}\n\n\nDate is: ${dates.first}\n${dates.second}\n\n${result[6]}"
                     }
-//Date Function
-                    val dates = extractDates(wordsString)
 
                     //val wordsArray = result[5].joinToString(prefix = "[", postfix = "]", separator = ", ")
                     //Printing final
@@ -435,7 +431,7 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     if(frameIndex == arrayBitmaps.size)
                     {
                         finalResult =
-                            "Product: $finalProduct\n\n\nPrice:\n$finalMRP\n\n\nPrice Array$MscoreArray\n\nMRP Score:$maxMRPScore\n\n\nWords Array:$wordsArrayDisplay\n\n\nDate is: ${dates.first}\n${dates.second}\n\n${MaxSizesMRP}"
+                            "Product: $finalProduct\n\n\n$finalString"
                         recognizedTextEt.setText(finalResult)
                         progressDialog.dismiss()
 
