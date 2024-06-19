@@ -306,7 +306,7 @@ class MainActivity : AppCompatActivity() {
 
         val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         if(wordsArray.isEmpty()){
-            return arrayListOf("0",0.0,"0",0.0,listOf(0.0),"0",listOf("0"))
+            return arrayListOf("Not found",0.0,"Not found",0.0,listOf(0.0),"Not found",listOf("Not found"))
         }
 
         val recognizedTextLines = recognizedText.split("\n").toTypedArray()
@@ -314,7 +314,7 @@ class MainActivity : AppCompatActivity() {
         var score = 0.0
         var mscore = 0.0
         //var j = 1.0
-        val len = wordsArray.size
+        val len = wordsArray.size.toDouble()
         val scoreArr = mutableListOf<Double>()
         val mscoreArr = mutableListOf<Double>()
         //4th condition
@@ -333,10 +333,10 @@ class MainActivity : AppCompatActivity() {
         for (i in wordsArray.indices) {
             if (wordsArray[i].length  > 3) {
                 if (wordsArray[i].uppercase() == wordsArray[i]) {
-                    score += 0.4
+                    score += 0.38
                 }
                 if (wordsArray[i].capitalize() == wordsArray[i]) {
-                    score += 0.3
+                    score += 0.4
                 }
                 if (i < (len / 3)) {
                     score += 0.2
@@ -348,60 +348,65 @@ class MainActivity : AppCompatActivity() {
             }
 
             if(wordsArray[i].toDoubleOrNull()!=null) {
-
-                val num: Double = wordsArray[i].toDouble()
-                mscore += 0.222
+                val num = wordsArray[i].toDouble()
+                mscore += 0.05
                 if (num in 2.0..5000.0) {
-                    mscore += 0.35
+                    mscore += 0.5
+                }
+                if(num==2.0){
+                    score+=0.32
                 }
                 //2nd condition
-                if (num!= 9.0 && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0  || (num - 9) % 10 == 0.0 )) {
-                    mscore += 0.25
+                if ((num!= 9.0) && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0  || (num - 9) % 10 == 0.0 )) {
+                    mscore += 0.3
                 }
                 //3rd condition
                 if (mrpValue == wordsArray[i]) {
                     showToast("Line")
-                    mscore += 1
+                    mscore += 0.5
                 }
-
                 if (2020 < num && num < 2030) {
-                    mscore -= 0.2
+                    mscore -= 0.1
                 }
                 //4th condition
                 if (wordsArray[i] in blockArray) {
                     //showToast("block")
-                    mscore += 0.9
+                    mscore += 0.31
+                }
+                if (i<(len*(2/3)) && i > (len*(1/3))) {
+                    mscore += 0.1
                 }
 
-                if (i < (len / 3)) {
-                    score += 0.15
-                } else {
-                    if (i < (len * 2 / 3)) {
-                        score += 0.1
-                    }
-                }
+            }
+    //Might need changes
+            if(wordsArray[i].contains("/-")){
+                if(mscoreArr.size > 0)
+                    mscoreArr[mscoreArr.size-1] += 0.3
+                mscore += 2
             }
             mscoreArr.add(mscore)
             scoreArr.add(score)
             mscore=0.0
             score = 0.0
         }
-        var adder = 0.6
+        var adder = 0.7
         for (i in top5Elements.indices) {
             for (j in wordsArray.indices) {
-                if (top5Elements[i] == wordsArray[j]) {
+                if (top5Elements[i] == wordsArray[j])
+                {
                     scoreArr[j] += adder
-                    //mscoreArr[j] += adder-0.2
                     adder -= 0.1
                 }
             }
         }
-        var mrpAdder = 0.4
+        var mrpadder = 0.35
         for (i in top3MRP.indices) {
             for (j in wordsArray.indices) {
-                if (top3MRP[i] == wordsArray[j]) {
-                    mscoreArr[j] += mrpAdder
-                    mrpAdder -= 0.1
+                if(wordsArray[j].toDoubleOrNull()!=null) {
+                    if (top3MRP[i].toDouble() == wordsArray[j].toDouble()) {
+                        mscoreArr[j] += mrpadder
+                        mrpadder -= 0.08
+                    }
                 }
             }
         }
@@ -414,9 +419,9 @@ class MainActivity : AppCompatActivity() {
         val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
         max1 += " "+ wordsArray[i2]
         //val max2Score = scoreArr[i2]
-        scoreArr[i2] = 0.0
-        val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
-        max1 += " "+wordsArray[i3]
+//        scoreArr[i2] = 0.0
+//        val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
+//        max1 += " "+wordsArray[i3]
 
         val j1 = mscoreArr.indexOf(mscoreArr.maxOrNull())
         val m1 = wordsArray[j1]

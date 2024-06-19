@@ -49,15 +49,20 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     val wordsArrayDisplay = result[5]
                     val mScoreArray = result[4]
                     val mrpScore = mScore.toDouble()
-                    val intScorer = scorer.toDouble()
-                    if(intScorer>maxScore){
-                        maxScore = intScorer
+//                    val intScorer = scorer.toDouble()
+//                    if(intScorer>maxScore){
+//                        maxScore = intScorer
                         finalProduct = result[0].toString()
+
+//                    }
+//                    if(mrpScore>maxMRPScore){
+//                        maxMRPScore = mrpScore
+                    finalMRP = if(mrpScore>0) {
+                        result[2].toString()
+                    } else{
+                        "Not found"
                     }
-                    if(mrpScore>maxMRPScore){
-                        maxMRPScore = mrpScore
-                        finalMRP = result[2].toString()
-                    }
+//                    }
 //Date Function
                     val dates = ep.extractDates(wordsString)
 
@@ -77,7 +82,7 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                         "Product: $finalProduct\n"+
                                 "Price:$finalMRP\n" +
                                 "Price Array$mScoreArray\n" +
-                                "MRP Score:$maxMRPScore\n" +
+                                "MRP Score:$mScore\n" +
                                 "Words Array:$wordsArrayDisplay\n" +
                                 "Date is: ${dates.first}\n${dates.second}\n" +
                                 "${result[6]}"
