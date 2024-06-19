@@ -158,7 +158,7 @@ class MainActivity : AppCompatActivity() {
                             val dy2 = (cornersM[2].y - cornersM[3].y).toDouble()
                               val len2M = sqrt(dx2 * dx2 + dy2 * dy2)
                             sizeM = (len1M + len2M) * 2
-                                //sizeM = len1M
+                           // sizeM = len1M
                         }
 
                         sizesMrp.add(SizeMRP(sizeM, element.text))
@@ -172,19 +172,22 @@ class MainActivity : AppCompatActivity() {
             elementSizes.sortedByDescending { it.size }.take(3).map { it.element }
         val top3MRP: List<String> =
             sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
+//        val top3M = top3MRP.toString()
+
 
 //Size for MRP
 
         //Score calculation
         //val wordsArray = recognizedText.split("(\\s+|:|;|.)".toRegex()).toTypedArray()
-        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+//        val top3MRPArray = top3M.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        var wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
 
         val recognizedTextLines = recognizedText.split("\n").toTypedArray()
 
         var score = 0.0
         var mscore = 0.0
         //var j = 1.0
-        val len = wordsArray.size
+        val len = wordsArray.size.toDouble()
         val scoreArr = mutableListOf<Double>()
         val mscoreArr = mutableListOf<Double>()
     //4th condition
@@ -218,37 +221,30 @@ class MainActivity : AppCompatActivity() {
             }
 
             if(wordsArray[i].toDoubleOrNull()!=null) {
-
                 val num = wordsArray[i].toDouble()
-                mscore += 0.222
-                if (2.0 <= num && num <= 5000.0) {
-                    mscore += 0.35
+                mscore += 0.2
+                if (num in 2.0..5000.0) {
+                    mscore += 0.5
                 }
                 //2nd condition
-                if (num!= 9.0 && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0  || (num - 9) % 10 == 0.0 )) {
-                    mscore += 0.25
+                if ((num!= 9.0) && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0  || (num - 9) % 10 == 0.0 )) {
+                    mscore += 0.3
                 }
                 //3rd condition
                 if (mrpValue == wordsArray[i]) {
                     showToast("Line")
-                    mscore += 1
+                    mscore += 0.5
                 }
-
                 if (2020 < num && num < 2030) {
-                    mscore -= 0.2
+                    mscore -= 0.1
                 }
                 //4th condition
                 if (wordsArray[i] in blockArray) {
                     //showToast("block")
-                    mscore += 0.9
+                    mscore += 0.31
                 }
-
-                if (i < (len / 3)) {
-                    score += 0.15
-                } else {
-                    if (i < (len * 2 / 3)) {
-                        score += 0.1
-                    }
+                if (i < (len*(2/3)) && i > (len*(1/3))) {
+                    mscore += 0.1
                 }
             }
             mscoreArr.add(mscore)
@@ -259,24 +255,28 @@ class MainActivity : AppCompatActivity() {
         var adder = 0.6
         for (i in top5Elements.indices) {
             for (j in wordsArray.indices) {
-                if (top5Elements[i] == wordsArray[j]) {
+                if (top5Elements[i] == wordsArray[j])
+                {
                     scoreArr[j] += adder
-                    //mscoreArr[j] += adder-0.2
                     adder -= 0.1
                 }
             }
         }
-    var mrpadder = 0.4
+    var mrpadder = 0.35
         for (i in top3MRP.indices) {
             for (j in wordsArray.indices) {
-                if (top3MRP[i] == wordsArray[j]) {
-                    mscoreArr[j] += mrpadder
-                    mrpadder -= 0.1
+                if(wordsArray[j].toDoubleOrNull()!=null) {
+                    if (top3MRP[i].toDouble() == wordsArray[j].toDouble()) {
+                        mscoreArr[j] += mrpadder
+                        mrpadder -= 0.08
+                    }
                 }
             }
         }
-
         //Setting up max scorers
+    if(wordsArray.isEmpty()){
+        return arrayListOf("0",0.0,"0",0.0, listOf<Double>(0.0),"0", listOf<String>("0"))
+    }
         val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
         var max1 = wordsArray[i1]
         val max1Score = scoreArr[i1]
@@ -293,6 +293,7 @@ class MainActivity : AppCompatActivity() {
         val m1Score = mscoreArr[j1]
 
         val wordsArrayreturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+//        val top3MRPArrayReturn = top3MRPArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
         return arrayListOf(max1, max1Score, m1, m1Score, mscoreArr, wordsArrayreturn,top3MRP)
             //, wordsArray, mrpValue)
@@ -318,10 +319,8 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     s.contains("Rs.", ignoreCase = true) ||
                     s.contains("MRP", ignoreCase = true) ||
                     s.contains("₹") ||
-                  //  s.contains("/") ||
                     s.contains("M.R.P", ignoreCase = true) ||
                     s.contains("Rs", ignoreCase = true)) {
-
                     resBlock.add(block.text)
                     break@outer
                 }
@@ -409,8 +408,9 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     //Picking max score product
                     val scorer = result[1].toString()
                     val Mscore = result[3].toString()
-                    val wordsArrayDisplay = result[5]
-                    val MscoreArray = result[4]
+                    var wordsArrayDisplay = result[5]
+                    var MscoreArray = result[4]
+                    var MaxSizesMRP = result[6]
                     val MRPscore = Mscore.toDouble()
                     val intScorer = scorer.toDouble()
                     if(intScorer>maxScore){
@@ -420,6 +420,11 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     if(MRPscore>maxMRPScore){
                         maxMRPScore = MRPscore
                         finalMRP = result[2].toString()
+                        wordsArrayDisplay = result[5]
+                        MaxSizesMRP = result[6]
+                        MscoreArray = result[4]
+
+
                     }
 //Date Function
                     val dates = extractDates(wordsString)
@@ -430,7 +435,7 @@ private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
                     if(frameIndex == arrayBitmaps.size)
                     {
                         finalResult =
-                            "Product: $finalProduct\n\n\nPrice:\n$finalMRP\n\n\nPrice Array$MscoreArray\n\nMRP Score:$maxMRPScore\n\n\nWords Array:$wordsArrayDisplay\n\n\nDate is: ${dates.first}\n${dates.second}\n\n${result[6]}"
+                            "Product: $finalProduct\n\n\nPrice:\n$finalMRP\n\n\nPrice Array$MscoreArray\n\nMRP Score:$maxMRPScore\n\n\nWords Array:$wordsArrayDisplay\n\n\nDate is: ${dates.first}\n${dates.second}\n\n${MaxSizesMRP}"
                         recognizedTextEt.setText(finalResult)
                         progressDialog.dismiss()
 
