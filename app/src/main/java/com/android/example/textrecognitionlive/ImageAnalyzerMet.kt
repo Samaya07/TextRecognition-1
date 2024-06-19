@@ -1,6 +1,5 @@
 package com.android.example.textrecognitionlive
 
-import android.content.ContentValues
 import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.annotation.OptIn
@@ -19,7 +18,6 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
     private var maxMRPScore = 0.0
     private var finalProduct = String()
     private var finalMRP = String()
-    private var frameIndex = 0
     private var finalResult = String()
     //recognizer.
     //val cameraSource = CameraSource.Builder(context, recognizer).build()
@@ -30,7 +28,6 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
         //val cameraSource = CameraSource.Builder(context, recognizer)
 
         Log.i(TAG,"iam")
-        //recognizer.pr
 
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
@@ -48,17 +45,17 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 
                     //Picking max score product
                     val scorer = result[1].toString()
-                    val Mscore = result[3].toString()
+                    val mScore = result[3].toString()
                     val wordsArrayDisplay = result[5]
-                    val MscoreArray = result[4]
-                    val MRPscore = Mscore.toDouble()
+                    val mScoreArray = result[4]
+                    val mrpScore = mScore.toDouble()
                     val intScorer = scorer.toDouble()
                     if(intScorer>maxScore){
                         maxScore = intScorer
                         finalProduct = result[0].toString()
                     }
-                    if(MRPscore>maxMRPScore){
-                        maxMRPScore = MRPscore
+                    if(mrpScore>maxMRPScore){
+                        maxMRPScore = mrpScore
                         finalMRP = result[2].toString()
                     }
 //Date Function
@@ -77,21 +74,21 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 
                     }*/
                     finalResult =
-                        "Product: $finalProduct\n\n\n"+
-                                "Price:\n$finalMRP\n\n\n" +
-                                "Price Array$MscoreArray\n\n" +
-                                "MRP Score:$maxMRPScore\n\n\n" +
-                                "Words Array:$wordsArrayDisplay\n\n\n" +
-                                "Date is: ${dates.first}\n${dates.second}\n\n" +
+                        "Product: $finalProduct\n"+
+                                "Price:$finalMRP\n" +
+                                "Price Array$mScoreArray\n" +
+                                "MRP Score:$maxMRPScore\n" +
+                                "Words Array:$wordsArrayDisplay\n" +
+                                "Date is: ${dates.first}\n${dates.second}\n" +
                                 "${result[6]}"
                     //recognizedTextEt.setText(finalResult)
-                    Log.i(TAG,finalResult)
+                    Log.i(TAG,"fr:$finalResult")
                     overlayView.updateElements(finalResult)
                     //processTextRecognitionResult(visionText)
                 }
                 .addOnFailureListener { e ->
                     // Task failed with an exception
-                    Log.e(ContentValues.TAG, "Text recognition error", e)
+                    Log.e(TAG, "Text recognition error", e)
                 }
                 .addOnCompleteListener {
                     imageProxy.close()

@@ -7,11 +7,9 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.ImageCapture
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.android.example.textrecognitionlive.databinding.ActivityMainBinding
 import java.util.concurrent.ExecutorService
@@ -22,12 +20,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.core.Preview
 import androidx.camera.core.CameraSelector
 import android.util.Log
-import androidx.annotation.OptIn
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -38,8 +31,6 @@ import com.google.android.gms.vision.Detector
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -330,7 +321,7 @@ class MainActivity : AppCompatActivity() {
         val blockOfMrp = extractDateMrpBlock(text).toString()
         val blockArray = blockOfMrp.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         //3rd condition MRP function
-        var mrpValue = "nonenull"
+        var mrpValue = "noneNull"
         for (line in recognizedTextLines) {
             if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|)\b""",RegexOption.IGNORE_CASE))) {
                 extractMrpValue(line)?.let {
@@ -405,12 +396,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        var mrpadder = 0.4
+        var mrpAdder = 0.4
         for (i in top3MRP.indices) {
             for (j in wordsArray.indices) {
                 if (top3MRP[i] == wordsArray[j]) {
-                    mscoreArr[j] += mrpadder
-                    mrpadder -= 0.1
+                    mscoreArr[j] += mrpAdder
+                    mrpAdder -= 0.1
                 }
             }
         }
@@ -475,7 +466,7 @@ class MainActivity : AppCompatActivity() {
     fun extractDates(text: String): Pair<String?, String?> {
         val potentialDates = mutableListOf<String>()
 
-        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMMyy, DD.MM.YYYY, and DD.MM.YY formats
+        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMyy, DD.MM.YYYY, and DD.MM.YY formats
         //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
         val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
 

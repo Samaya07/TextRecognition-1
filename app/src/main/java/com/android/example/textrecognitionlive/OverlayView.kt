@@ -176,7 +176,7 @@ class GraphicOverlay(context: Context, attrs: AttributeSet) : View(context, attr
     /** Draws the overlay with its associated graphic objects.  */
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        Log.i(TAG, "canvas: $canvas")
+       // Log.i(TAG, "canvas: $canvas")
         //val cs = CameraSource.Builder(context).setRequestedFps(5)
         //cameraSource = CameraSource.Builder(context,recognizer).build()
         //cameraS = CameraSource.build()
@@ -185,10 +185,10 @@ class GraphicOverlay(context: Context, attrs: AttributeSet) : View(context, attr
 
 
 
-        if (previewWidth > 0 && previewHeight > 0) {
+        /*if (previewWidth > 0 && previewHeight > 0) {
             widthScaleFactor = width.toFloat() / previewWidth
             heightScaleFactor = height.toFloat() / previewHeight
-        }
+        }*/
         //super.onDraw(canvas)
 
         /*for (element in elements) {
@@ -201,8 +201,15 @@ class GraphicOverlay(context: Context, attrs: AttributeSet) : View(context, attr
 
             }
         }*/
-        Log.i(TAG, "think: $elements")
-        canvas.drawText(elements, 50F, 100F,textPaint)
+        Log.i(TAG, "think: $elements , done")
+        val arrayFinal = elements.split("\n").toTypedArray()
+        var incr: Float = 0F
+        for(x in arrayFinal)
+        {
+            canvas.drawText(x, 50F, 100F+incr,textPaint)
+            incr += 20F
+        }
+       // canvas.drawText(elements, 50F, 100F,textPaint)
         //draw(canvas)
 
         synchronized(lock) {
