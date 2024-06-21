@@ -44,6 +44,7 @@ class OverlayView(context: Context, attrs: AttributeSet) : View(context, attrs) 
 //import androidx.constraintlayout.core.motion.utils.Utils
 //import androidx.constraintlayout.core.motion.utils.Utils
 //import com.google.mlkit.md.Utils
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -52,14 +53,9 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
-import android.view.View
 import android.util.Log
-import android.content.ContentValues.TAG
+import android.view.View
 import com.android.example.textrecognitionlive.GraphicOverlay.Graphic
-import com.google.android.gms.vision.CameraSource
-import com.google.android.gms.vision.Detector
-import com.google.mlkit.vision.text.Text
-import com.google.mlkit.vision.text.TextRecognizer
 
 
 /**
@@ -94,7 +90,8 @@ class GraphicOverlay(context: Context, attrs: AttributeSet) : View(context, attr
     }
     private val textPaint = Paint().apply {
         color = Color.WHITE
-        textSize = 20f
+        setBackgroundColor(Color.BLACK)
+        textSize = 24f
         typeface = Typeface.DEFAULT_BOLD
     }
 
