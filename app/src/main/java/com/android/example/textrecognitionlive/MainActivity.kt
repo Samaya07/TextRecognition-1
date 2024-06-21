@@ -302,7 +302,7 @@ class MainActivity : AppCompatActivity() {
 
         val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         if(wordsArray.isEmpty()){
-            return arrayListOf("Not found",0.0,"Not found",0.0,listOf(0.0),"Not found",listOf("Not found"))
+            return arrayListOf("Not found",0.0,"Not found",0.0,listOf(0.0),"Not found",listOf("Not found"),"Not found")
         }
 
         val recognizedTextLines = recognizedText.split("\n").toTypedArray()
@@ -414,9 +414,9 @@ class MainActivity : AppCompatActivity() {
         val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
         var max1 = wordsArray[i1]
         val max1Score = scoreArr[i1]
-        scoreArr[i1] = 0.0
-        val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
-        max1 += " "+ wordsArray[i2]
+//        scoreArr[i1] = 0.0
+//        val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
+//        max1 += " "+ wordsArray[i2]
         //val max2Score = scoreArr[i2]
 //        scoreArr[i2] = 0.0
 //        val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
