@@ -80,6 +80,7 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     }*/
                     finalResult =
                         "Product: $finalProduct\n"+
+                                "Max product: ${result[7]}\n" +
                                 "Price:$finalMRP\n" +
                                 "Price Array$mScoreArray\n" +
                                 "MRP Score:$mScore\n" +

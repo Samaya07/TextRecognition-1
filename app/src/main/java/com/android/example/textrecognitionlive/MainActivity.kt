@@ -302,7 +302,7 @@ class MainActivity : AppCompatActivity() {
 
         val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         if(wordsArray.isEmpty()){
-            return arrayListOf("Not found",0.0,"Not found",0.0,listOf(0.0),"Not found",listOf("Not found"))
+            return arrayListOf("Not found",0.0,"Not found",0.0,listOf(0.0),"Not found",listOf("Not found"), "Not found")
         }
 
         val recognizedTextLines = recognizedText.split("\n").toTypedArray()
@@ -417,12 +417,12 @@ class MainActivity : AppCompatActivity() {
         scoreArr[i1] = 0.0
         val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
         //In order Printing
-        if(i1>i2) {
-            max1 += " "+ wordsArray[i2]
-        }
-        else{
-            max1 = wordsArray[i2] + max1
-        }
+//        if(i1>i2) {
+//            max1 += " "+ wordsArray[i2]
+//        }
+//        else{
+//            max1 = wordsArray[i2] + max1
+//        }
 
         //val max2Score = scoreArr[i2]
 //        scoreArr[i2] = 0.0
@@ -435,7 +435,27 @@ class MainActivity : AppCompatActivity() {
 
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
-        return arrayListOf(max1, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP)
+//Block
+        var finalProd = ""
+        var flag = 0
+        for (block in text.textBlocks) {
+            if(flag==1){
+                finalProd += " " +  block.text
+                    break
+            }
+            for (line in block.lines) {
+                for (element in line.elements) {
+                    if (max1 == element.text) {
+                        finalProd = block.text
+                        flag = 1
+                    }
+
+                }
+            }
+        }
+
+
+        return arrayListOf(finalProd, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP,max1)
         //, wordsArray, mrpValue)
         //return wordsArray[i1]
     }
