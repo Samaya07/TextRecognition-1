@@ -4,7 +4,6 @@ package com.android.example.textrecognitionlive
 //import com.google.android.gms.vision.Detector
 //import com.google.mlkit.vision.common.InputImage
 //import com.google.mlkit.vision.text.TextRecognition
-import java.util.regex.Pattern
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
@@ -29,12 +28,14 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.android.example.textrecognitionlive.databinding.ActivityMainBinding
+import com.google.firebase.encoders.annotations.Encodable.Ignore
 import com.google.mlkit.vision.text.Text
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.regex.Pattern
 import kotlin.math.sqrt
 
 typealias LumaListener = (luma: Double) -> Unit
@@ -327,7 +328,6 @@ class MainActivity : AppCompatActivity() {
 
         val specialCharPattern = Pattern.compile("[^a-zA-Z0-9]")
         val moreThanThreeDigitsPattern = Pattern.compile("\\d{4,}")
-
         for (i in wordsArray.indices) {
             if (wordsArray[i].length  > 3) {
                 if (wordsArray[i].uppercase() != wordsArray[i]) {
@@ -349,6 +349,10 @@ class MainActivity : AppCompatActivity() {
                 if (moreThanThreeDigitsPattern.matcher(wordsArray[i]).find()) {
                     score -= 0.5
                 }
+                if (i>0 && wordsArray[i-1].contains(Regex("""\b(item|product|tem|roduct|ite|produc|roduc)\b""",RegexOption.IGNORE_CASE))) {
+                    score += 1
+                }
+
             }
 
             if(wordsArray[i].toDoubleOrNull()!=null) {
