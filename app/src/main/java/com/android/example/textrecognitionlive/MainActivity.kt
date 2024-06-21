@@ -416,7 +416,14 @@ class MainActivity : AppCompatActivity() {
         val max1Score = scoreArr[i1]
         scoreArr[i1] = 0.0
         val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
-        max1 += " "+ wordsArray[i2]
+        //In order Printing
+        if(i1>i2) {
+            max1 += " "+ wordsArray[i2]
+        }
+        else{
+            max1 = wordsArray[i2] + max1
+        }
+
         //val max2Score = scoreArr[i2]
 //        scoreArr[i2] = 0.0
 //        val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
@@ -552,9 +559,6 @@ fun extractDates(text: String): Pair<String?, String?> {
 )
 \s*(?!\w)
 """.trimMargin())
-
-
-
 
     // Find all potential dates using the regex
     dateRegex.findAll(text).forEach { match ->
