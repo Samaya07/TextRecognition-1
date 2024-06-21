@@ -330,13 +330,13 @@ class MainActivity : AppCompatActivity() {
         val moreThanThreeDigitsPattern = Pattern.compile("\\d{4,}")
         for (i in wordsArray.indices) {
             if (wordsArray[i].length  > 3) {
-                if (wordsArray[i].uppercase() != wordsArray[i]) {
+                if (wordsArray[i].uppercase() != wordsArray[i] && wordsArray[i].toDoubleOrNull()==null) {
                     score += 0.08
                 }
                 else{
                     score += 0.1
                 }
-                if (wordsArray[i].capitalize(Locale.ROOT) == wordsArray[i]) {
+                if (wordsArray[i].capitalize(Locale.ROOT) == wordsArray[i] && wordsArray[i].toDoubleOrNull()==null) {
                     score += 0.1
                 }
                 if(len>20){
@@ -344,15 +344,14 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 if (specialCharPattern.matcher(wordsArray[i]).find()) {
-                    score -= 0.2
+                    score -= 1
                 }
                 if (moreThanThreeDigitsPattern.matcher(wordsArray[i]).find()) {
-                    score -= 0.5
+                    score -= 0.9
                 }
                 if (i>0 && wordsArray[i-1].contains(Regex("""\b(item|product|tem|roduct|ite|produc|roduc)\b""",RegexOption.IGNORE_CASE))) {
                     score += 1
                 }
-
             }
 
             if(wordsArray[i].toDoubleOrNull()!=null) {
@@ -409,17 +408,17 @@ class MainActivity : AppCompatActivity() {
                 if (top5Elements[i] == wordsArray[j])
                 {
                     scoreArr[j] += adder
-                    adder -= 0.1
+                    adder -= 0.2
                 }
             }
         }
-        var mrpadder = 0.35
+        var mrpadder = 0.4
         for (i in top3MRP.indices) {
             for (j in wordsArray.indices) {
                 if(wordsArray[j].toDoubleOrNull()!=null) {
                     if (top3MRP[i].toDouble() == wordsArray[j].toDouble()) {
                         mscoreArr[j] += mrpadder
-                        mrpadder -= 0.04
+                        mrpadder -= 0.1
                     }
                 }
             }
