@@ -426,9 +426,27 @@ class MainActivity : AppCompatActivity() {
         val m1 = wordsArray[j1]
         val m1Score = mscoreArr[j1]
 
+        var finalProd = ""
+        var flag = 0
+        for (block in text.textBlocks) {
+            if(flag==1){
+                finalProd += " " +  block.text
+                break
+            }
+            for (line in block.lines) {
+                for (element in line.elements) {
+                    if (max1 == element.text) {
+                        finalProd = block.text
+                        flag = 1
+                    }
+
+                }
+            }
+        }
+
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
-        return arrayListOf(max1, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP)
+        return arrayListOf(finalProd, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP,max1)
         //, wordsArray, mrpValue)
         //return wordsArray[i1]
     }
