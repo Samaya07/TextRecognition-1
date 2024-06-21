@@ -40,8 +40,8 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     arrayOfProds.add(result)
 
                     val recognizedText = visionText.text
-                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
-                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+//                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
+//                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
                     //Picking max score product
                     val scorer = result[1].toString()
@@ -49,7 +49,7 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     val wordsArrayDisplay = result[5]
                     val mScoreArray = result[4]
                     val mrpScore = mScore.toDouble()
-//                    val intScorer = scorer.toDouble()
+                    val intScorer = scorer.toDouble()
 //                    if(intScorer>maxScore){
 //                        maxScore = intScorer
                         finalProduct = result[0].toString()
@@ -64,7 +64,7 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     }
 //                    }
 //Date Function
-                    val dates = ep.extractDates(wordsString)
+                    val dates = ep.extractDates(recognizedText)
 
                     //val wordsArray = result[5].joinToString(prefix = "[", postfix = "]", separator = ", ")
                     //Printing final
