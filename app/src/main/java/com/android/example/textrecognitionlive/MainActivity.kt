@@ -318,13 +318,18 @@ class MainActivity : AppCompatActivity() {
         val blockArray = blockOfMrp.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         //3rd condition MRP function
         var mrpValue = "noneNull"
+        var mrpLine = ""
         for (line in recognizedTextLines) {
             if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|)\b""",RegexOption.IGNORE_CASE))) {
-                extractMrpValue(line)?.let {
-                    mrpValue = it
-                }
+                mrpLine = line
+//                extractMrpValue(line)?.let {
+//                    mrpValue = it
+//                }
+                break
             }
         }
+
+        val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
 
         for (i in wordsArray.indices) {
             if (wordsArray[i].length  > 3) {
@@ -357,8 +362,8 @@ class MainActivity : AppCompatActivity() {
                     mscore += 0.3
                 }
                 //3rd condition
-                if (mrpValue == wordsArray[i]) {
-                    showToast("Line")
+                if (mrpLineArray.contains(wordsArray[i])) {
+                    //showToast("Line")
                     mscore += 0.5
                 }
                 if (2020 < num && num < 2030) {
@@ -451,11 +456,11 @@ class MainActivity : AppCompatActivity() {
         //return wordsArray[i1]
     }
 
-    private fun extractMrpValue(line: String): String? {
-        val mrpPattern = """""${'"'}(?i)\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]?\s*(\d+(?:\.\d+)?)(?:\s*(₹?))?""${'"'}""".toRegex(RegexOption.IGNORE_CASE)
-        val matchResult = mrpPattern.find(line)
-        return matchResult?.groupValues?.get(1)?.trim()
-    }
+//    private fun extractMrpValue(line: String): String? {
+//        val mrpPattern = """(?i)\b(?:Rs|MRP|mrp|MR|MRR|MPP|MPR|M.R.P)\s*[:.]?\s*(\d+(?:\.\d+)?)(?:\s*(₹?))?""".toRegex(RegexOption.IGNORE_CASE)
+//        val matchResult = mrpPattern.find(line)
+//        return matchResult?.groupValues?.get(1)?.trim()
+//    }
 
     //Date Function
     private fun extractDateMrpBlock(text: Text): ArrayList<Any>  {
@@ -571,6 +576,8 @@ class MainActivity : AppCompatActivity() {
             }
             return null
         }
+
+
 
         // Sort the potential dates by their parsed Date objects
         val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }

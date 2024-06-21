@@ -90,7 +90,7 @@ class GraphicOverlay(context: Context, attrs: AttributeSet) : View(context, attr
     }
     private val textPaint = Paint().apply {
         color = Color.WHITE
-        setBackgroundColor(Color.BLACK)
+        //setBackgroundColor(Color.BLACK)
         textSize = 24f
         typeface = Typeface.DEFAULT_BOLD
     }
