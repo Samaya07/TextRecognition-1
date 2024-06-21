@@ -46,40 +46,39 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 //                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
                     //Picking max score product
-                    val scorer = result[1].toString()
-                    val mScore = result[3].toString()
+                    val pScore = result[1].toString().toDouble()
+                    val mScore = result[3].toString().toDouble()
                     val wordsArrayDisplay = result[5]
                     val mScoreArray = result[4]
-                    val mrpScore = mScore.toDouble()
-                    val intScorer = scorer.toDouble()
-                    if(intScorer>=maxScore){
-                        maxScore = intScorer
+                    if(pScore>maxScore){
+                        maxScore = pScore
                         finalProduct = result[0].toString()
+                    }
+                    if(mScore>maxMRPScore) {
+                        maxMRPScore = mScore
+                        finalMRP = result[2].toString()
+                    }
+//                    finalMRP = if(mrpScore>0) {
+//                        result[2].toString()
+//                    } else{
+//                        "Not found"
+//                    }
 
-                    }
-                    if(mrpScore>=maxMRPScore){
-                        maxMRPScore = mrpScore
-                    finalMRP = if(mrpScore>0) {
-                        result[2].toString()
-                    } else{
-                        "Not found"
-                    }
-                    }
 //Date Function
-                    val dates = ep.extractDates(recognizedText)
-                    val manufacturingDate = dates.first
-                    val expiryDate = dates.second
-                    if(manufacturingDate!=null && finalMFG!="") finalMFG = manufacturingDate
-
-                    if(expiryDate!=null && finalEXP!="") finalEXP = expiryDate
-
-                    if(manufacturingDate!=null && finalMFG.length < manufacturingDate.length) finalMFG = manufacturingDate
-
-                    if(expiryDate!=null && finalEXP.length < expiryDate.length) finalEXP = expiryDate
-
-                    if(manufacturingDate!=null && !finalMFG.contains("/") && manufacturingDate.contains("/")) finalMFG = manufacturingDate
-
-                    if(expiryDate!=null && !finalEXP.contains("/") && expiryDate.contains("/")) finalEXP = expiryDate
+//                    val dates = ep.extractDates(recognizedText)
+//                    val manufacturingDate = dates.first
+//                    val expiryDate = dates.second
+//                    if(manufacturingDate!=null && finalMFG!="") finalMFG = manufacturingDate
+//
+//                    if(expiryDate!=null && finalEXP!="") finalEXP = expiryDate
+//
+//                    if(manufacturingDate!=null && finalMFG.length < manufacturingDate.length) finalMFG = manufacturingDate
+//
+//                    if(expiryDate!=null && finalEXP.length < expiryDate.length) finalEXP = expiryDate
+//
+//                    if(manufacturingDate!=null && !finalMFG.contains("/") && manufacturingDate.contains("/")) finalMFG = manufacturingDate
+//
+//                    if(expiryDate!=null && !finalEXP.contains("/") && expiryDate.contains("/")) finalEXP = expiryDate
 
                     //val wordsArray = result[5].joinToString(prefix = "[", postfix = "]", separator = ", ")
                     //Printing final
@@ -94,16 +93,16 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 
                     }*/
                     finalResult =
-                        "Product: $finalProduct\n"+
                                 "Max product: ${result[7]}\n\n" +
-                                "${result[6]}\n"+
+                                "Score Prod: $pScore\n\n"        +
                                 "Price:$finalMRP\n" +
                                 "MRP Score:$mScore\n" +
+                                "${result[6]}\n"+
                                 "Price Array$mScoreArray\n\n" +
                                 "Words Array:$wordsArrayDisplay\n\n" +
-                                "Date is: ${finalMFG}\n${finalEXP}\n" +
-                                "Final prod $finalProduct\n"+
-                                "Final MRP $finalMRP"
+                                //"Date is: ${finalMFG}\n${finalEXP}\n" +
+                                "Final prod $finalProduct"+ "    "+"Its max score:$maxScore\n"+
+                                "Final MRP $finalMRP" +  "     " + "Its max score: $maxMRPScore"
                     //recognizedTextEt.setText(finalResult)
                     Log.i(TAG,"fr:$finalResult")
                     overlayView.updateElements(finalResult)
