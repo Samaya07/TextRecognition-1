@@ -19,6 +19,8 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
     private var finalProduct = String()
     private var finalMRP = String()
     private var finalResult = String()
+    private var finalMFG = String()
+    private var finalEXP = String()
     //recognizer.
     //val cameraSource = CameraSource.Builder(context, recognizer).build()
 
@@ -65,6 +67,19 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 //                    }
 //Date Function
                     val dates = ep.extractDates(recognizedText)
+                    val manufacturingDate = dates.first
+                    val expiryDate = dates.second
+                    if(manufacturingDate!=null && finalMFG!="") finalMFG = manufacturingDate
+
+                    if(expiryDate!=null && finalEXP!="") finalEXP = expiryDate
+
+                    if(manufacturingDate!=null && finalMFG.length < manufacturingDate.length) finalMFG = manufacturingDate
+
+                    if(expiryDate!=null && finalEXP.length < expiryDate.length) finalEXP = expiryDate
+
+                    if(manufacturingDate!=null && !finalMFG.contains("/") && manufacturingDate.contains("/")) finalMFG = manufacturingDate
+
+                    if(expiryDate!=null && !finalEXP.contains("/") && expiryDate.contains("/")) finalEXP = expiryDate
 
                     //val wordsArray = result[5].joinToString(prefix = "[", postfix = "]", separator = ", ")
                     //Printing final
@@ -85,7 +100,7 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                                 "Price Array$mScoreArray\n" +
                                 "MRP Score:$mScore\n" +
                                 "Words Array:$wordsArrayDisplay\n" +
-                                "Date is: ${dates.first}\n${dates.second}\n" +
+                                "Date is: ${finalMFG}\n${finalEXP}\n" +
                                 "${result[6]}"
                     //recognizedTextEt.setText(finalResult)
                     Log.i(TAG,"fr:$finalResult")

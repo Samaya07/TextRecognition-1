@@ -589,6 +589,7 @@ class MainActivity : AppCompatActivity() {
         val expiryDate = sortedDates.getOrNull(1)
 
         return manufacturingDate to expiryDate
+        //return finalMFG to finalEXP
     }
 
 
