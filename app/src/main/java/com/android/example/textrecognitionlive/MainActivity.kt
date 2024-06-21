@@ -442,19 +442,19 @@ class MainActivity : AppCompatActivity() {
         val m1Score = mscoreArr[j1]
 
         var finalProd = max1
-        var flag = 0
+//        var flag = 0
         for (block in text.textBlocks) {
-            if(flag==1){
-                if(block.text.toString().contains(max2)){
-                    finalProd = max1 + block.text
-                }
-                break
-            }
+//            if(flag==1){
+//                if(block.text.toString().contains(max2)){
+//                    finalProd = max1 + block.text
+//                }
+//                break
+//        }
             for (line in block.lines) {
                 for (element in line.elements) {
                     if (max1 == element.text) {
                         finalProd = block.text
-                        flag = 1
+//                        flag = 1
                     }
                 }
             }
