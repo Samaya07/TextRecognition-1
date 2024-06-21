@@ -1,39 +1,39 @@
 package com.android.example.textrecognitionlive
 
+//import com.google.android.gms.vision.CameraSource
+//import com.google.android.gms.vision.Detector
+//import com.google.mlkit.vision.common.InputImage
+//import com.google.mlkit.vision.text.TextRecognition
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
-import androidx.camera.video.VideoCapture
-import androidx.core.content.ContextCompat
-import com.android.example.textrecognitionlive.databinding.ActivityMainBinding
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.Preview
+import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
-import android.util.Log
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-//import com.google.android.gms.vision.CameraSource
-//import com.google.android.gms.vision.Detector
-//import com.google.mlkit.vision.common.InputImage
+import com.android.example.textrecognitionlive.databinding.ActivityMainBinding
 import com.google.mlkit.vision.text.Text
-//import com.google.mlkit.vision.text.TextRecognition
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.math.sqrt
 
 typealias LumaListener = (luma: Double) -> Unit
@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
     private fun startCamera() {
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-       // val cameraSource = CameraSource.Builder(baseContext,)
+        // val cameraSource = CameraSource.Builder(baseContext,)
         //val cameraSource = CameraSource.Builder(this).setRequestedFps(12F).build()
 
 
@@ -302,7 +302,7 @@ class MainActivity : AppCompatActivity() {
 
         val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         if(wordsArray.isEmpty()){
-            return arrayListOf("Not found",0.0,"Not found",0.0,listOf(0.0),"Not found",listOf("Not found"), "Not found")
+            return arrayListOf("Not found",0.0,"Not found",0.0,listOf(0.0),"Not found",listOf("Not found"))
         }
 
         val recognizedTextLines = recognizedText.split("\n").toTypedArray()
@@ -374,7 +374,7 @@ class MainActivity : AppCompatActivity() {
 //                }
 
             }
-    //Might need changes
+            //Might need changes
             if(wordsArray[i].contains("/-")){
                 if(i>1 && wordsArray[i-1].toDoubleOrNull()!=null){
                     mscoreArr[i-1] += 1.0
@@ -416,14 +416,7 @@ class MainActivity : AppCompatActivity() {
         val max1Score = scoreArr[i1]
         scoreArr[i1] = 0.0
         val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
-        //In order Printing
-//        if(i1>i2) {
-//            max1 += " "+ wordsArray[i2]
-//        }
-//        else{
-//            max1 = wordsArray[i2] + max1
-//        }
-
+        max1 += " "+ wordsArray[i2]
         //val max2Score = scoreArr[i2]
 //        scoreArr[i2] = 0.0
 //        val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
@@ -435,27 +428,7 @@ class MainActivity : AppCompatActivity() {
 
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
-//Block
-        var finalProd = ""
-        var flag = 0
-        for (block in text.textBlocks) {
-            if(flag==1){
-                finalProd += " " +  block.text
-                    break
-            }
-            for (line in block.lines) {
-                for (element in line.elements) {
-                    if (max1 == element.text) {
-                        finalProd = block.text
-                        flag = 1
-                    }
-
-                }
-            }
-        }
-
-
-        return arrayListOf(finalProd, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP,max1)
+        return arrayListOf(max1, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP)
         //, wordsArray, mrpValue)
         //return wordsArray[i1]
     }
@@ -494,7 +467,7 @@ class MainActivity : AppCompatActivity() {
         return resBlock
     }
 
-//    fun extractDates(text: String): Pair<String?, String?> {
+    //    fun extractDates(text: String): Pair<String?, String?> {
 //        val potentialDates = mutableListOf<String>()
 //
 //        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMyy, DD.MM.YYYY, and DD.MM.YY formats
@@ -550,22 +523,22 @@ class MainActivity : AppCompatActivity() {
 //
 //        return manufacturingDate to expiryDate
 //    }
-fun extractDates(text: String): Pair<String?, String?> {
-    val potentialDates = mutableListOf<String>()
+    fun extractDates(text: String): Pair<String?, String?> {
+        val potentialDates = mutableListOf<String>()
 
-    // Regex for DD/MM/YYYY, DD/MM/YY, DDMMyy, DD.MM.YYYY, and DD.MM.YY formats
-    //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
-    //val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
+        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMyy, DD.MM.YYYY, and DD.MM.YY formats
+        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
+        //val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
 
-    val dateRegex = Regex("""(?ix)
+        val dateRegex = Regex("""(?ix)
 \s*
 (?:
   (\d{1,2})[/.](\d{1,2})[/.](\d{4}) |  # Format: DD/MM/YYYY, DD.MM.YYYY
   (\d{1,2})[/.](\d{1,2})[/.](\d{2}) |  # Format: DD/MM/YY, DD.MM.YY
   (\d{4})[/.](\d{1,2})[/.](\d{1,2}) |  # Format: YYYY/MM/DD, YYYY.MM.DD
   
-  (\d{1,2})[/.](\d{4}) |  # Format: MM/YYYY, MM.YYYY
-  (\d{1,2})/(\d{2}) |  # Format: MM/YY, MM.YY
+  (\d{1,2})[/-](\d{4}) |  # Format: MM/YYYY, MM-YYYY
+  (\d{1,2})[/-](\d{2}) |  # Format: MM/YY, MM-YY
 
   
   (\d{1,2})-(\d{1,2})-(\d{4}) |  # Format: DD-MM-YYYY
@@ -576,70 +549,78 @@ fun extractDates(text: String): Pair<String?, String?> {
   
   # Formats with Month Names
   (\d{1,2}) \s* ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec) (\d{4}) |  # DD MMM YYYY
+  ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec) (\d{4}) | #MMM YYYY
+  ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec) (\d{2}) | #MMM YY
 )
 \s*(?!\w)
 """.trimMargin())
 
-    // Find all potential dates using the regex
-    dateRegex.findAll(text).forEach { match ->
-        potentialDates.add(match.value)
-        Log.i(ContentValues.TAG, match.value)
-    }
 
-    // If no dates are found, return null for both
-    if (potentialDates.isEmpty()) {
-        return null to null
-    }
 
-    // Helper function to convert date strings to Date objects for comparison
-    fun parseDate(dateStr: String): Date? {
-        val formats = listOf(
-            SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
-            SimpleDateFormat("MM/dd/yyyy", Locale.ENGLISH),
-            SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH),
-            SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH),
-            SimpleDateFormat("MM-dd-yyyy", Locale.ENGLISH),
-            SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH),
-            SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
-            SimpleDateFormat("MM.dd.yyyy", Locale.ENGLISH),
-            SimpleDateFormat("yyyy.MM.dd", Locale.ENGLISH),
-            SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH),
-            SimpleDateFormat("MMM dd yyyy", Locale.ENGLISH),
-            SimpleDateFormat("yyyy MMM dd", Locale.ENGLISH),
-            SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
-            SimpleDateFormat("MM/dd/yy", Locale.ENGLISH),
-            SimpleDateFormat("yy/MM/dd", Locale.ENGLISH),
-            SimpleDateFormat("dd-MM-yy", Locale.ENGLISH),
-            SimpleDateFormat("MM-dd-yy", Locale.ENGLISH),
-            SimpleDateFormat("yy-MM-dd", Locale.ENGLISH),
-            SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
-            SimpleDateFormat("MM.dd.yy", Locale.ENGLISH),
-            SimpleDateFormat("MM/yyyy", Locale.ENGLISH),
-            SimpleDateFormat("MM.yyyy", Locale.ENGLISH),
-            SimpleDateFormat("MM/yy", Locale.ENGLISH),
-        )
 
-        for (format in formats) {
-            try {
-                return format.parse(dateStr)
-            } catch (e: Exception) {
-                // Continue to the next format
-            }
+        // Find all potential dates using the regex
+        dateRegex.findAll(text).forEach { match ->
+            potentialDates.add(match.value)
+            Log.i(ContentValues.TAG, match.value)
         }
-        return null
+
+        // If no dates are found, return null for both
+        if (potentialDates.isEmpty()) {
+            return null to null
+        }
+
+        // Helper function to convert date strings to Date objects for comparison
+        fun parseDate(dateStr: String): Date? {
+            val formats = listOf(
+                SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH),
+                SimpleDateFormat("MM/dd/yyyy", Locale.ENGLISH),
+                SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH),
+                SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH),
+                SimpleDateFormat("MM-dd-yyyy", Locale.ENGLISH),
+                SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH),
+                SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH),
+                SimpleDateFormat("MM.dd.yyyy", Locale.ENGLISH),
+                SimpleDateFormat("yyyy.MM.dd", Locale.ENGLISH),
+                SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH),
+                SimpleDateFormat("MMM dd yyyy", Locale.ENGLISH),
+                SimpleDateFormat("yyyy MMM dd", Locale.ENGLISH),
+                SimpleDateFormat("dd/MM/yy", Locale.ENGLISH),
+                SimpleDateFormat("MM/dd/yy", Locale.ENGLISH),
+                SimpleDateFormat("yy/MM/dd", Locale.ENGLISH),
+                SimpleDateFormat("dd-MM-yy", Locale.ENGLISH),
+                SimpleDateFormat("MM-dd-yy", Locale.ENGLISH),
+                SimpleDateFormat("yy-MM-dd", Locale.ENGLISH),
+                SimpleDateFormat("dd.MM.yy", Locale.ENGLISH),
+                SimpleDateFormat("MM.dd.yy", Locale.ENGLISH),
+                SimpleDateFormat("MM/yyyy", Locale.ENGLISH),
+                SimpleDateFormat("MMM yyyy", Locale.ENGLISH),
+                SimpleDateFormat("MMM yy", Locale.ENGLISH),
+                SimpleDateFormat("MM/yy", Locale.ENGLISH),
+                SimpleDateFormat("MM-yy", Locale.ENGLISH),
+                SimpleDateFormat("MM-yyyy", Locale.ENGLISH),
+            )
+
+            for (format in formats) {
+                try {
+                    return format.parse(dateStr)
+                } catch (e: Exception) {
+                    // Continue to the next format
+                }
+            }
+            return null
+        }
+
+        // Sort the potential dates by their parsed Date objects
+        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
+            .sortedBy { it.second }
+            .map { it.first }
+
+        // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
+        val manufacturingDate = sortedDates.firstOrNull()
+        val expiryDate = sortedDates.getOrNull(1)
+
+        return manufacturingDate to expiryDate
     }
-
-    // Sort the potential dates by their parsed Date objects
-    val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
-        .sortedBy { it.second }
-        .map { it.first }
-
-    // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
-    val manufacturingDate = sortedDates.firstOrNull()
-    val expiryDate = sortedDates.getOrNull(1)
-
-    return manufacturingDate to expiryDate
-}
 
 
 
@@ -648,10 +629,3 @@ fun extractDates(text: String): Pair<String?, String?> {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
-
-
-
-
-
-
-
