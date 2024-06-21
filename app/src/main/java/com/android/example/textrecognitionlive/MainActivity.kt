@@ -4,6 +4,7 @@ package com.android.example.textrecognitionlive
 //import com.google.android.gms.vision.Detector
 //import com.google.mlkit.vision.common.InputImage
 //import com.google.mlkit.vision.text.TextRecognition
+import java.util.regex.Pattern
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
@@ -263,11 +264,11 @@ class MainActivity : AppCompatActivity() {
                         val dx1 = (corners[0].x - corners[3].x).toDouble()
                         val dy1 = (corners[0].y - corners[3].y).toDouble()
                         val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
-//                        val dx2 = (corners[2].x - corners[3].x).toDouble()
-//                        val dy2 = (corners[2].y - corners[3].y).toDouble()
-//                        val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
-//                        size = (len1 + len2) * 2
-                        size = len1
+                        val dx2 = (corners[2].x - corners[3].x).toDouble()
+                        val dy2 = (corners[2].y - corners[3].y).toDouble()
+                        val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
+                        size = (len1 + len2) * 2
+//                        size = len1
                     }
                     if (elementText.matches(Regex("\\d+(\\.\\d+)?"))) {
                         var sizeM = 0.0
@@ -282,11 +283,9 @@ class MainActivity : AppCompatActivity() {
 //                            sizeM = (len1M + len2M) * 2
                             sizeM = len1M
                         }
-
                         sizesMrp.add(SizeMRP(sizeM, element.text))
                     }
                     elementSizes.add(ElementSize(size, element.text))
-
                 }
             }
         }
@@ -317,34 +316,38 @@ class MainActivity : AppCompatActivity() {
         val blockOfMrp = extractDateMrpBlock(text).toString()
         val blockArray = blockOfMrp.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         //3rd condition MRP function
-        var mrpValue = "noneNull"
-        var mrpLine = ""
+        var mrpLine = "noneNull"
         for (line in recognizedTextLines) {
             if (line.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|)\b""",RegexOption.IGNORE_CASE))) {
                 mrpLine = line
-//                extractMrpValue(line)?.let {
-//                    mrpValue = it
-//                }
                 break
             }
         }
-
         val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+
+        val specialCharPattern = Pattern.compile("[^a-zA-Z0-9]")
+        val moreThanThreeDigitsPattern = Pattern.compile("\\d{4,}")
 
         for (i in wordsArray.indices) {
             if (wordsArray[i].length  > 3) {
-                if (wordsArray[i].uppercase() == wordsArray[i]) {
-                    score += 0.35
+                if (wordsArray[i].uppercase() != wordsArray[i]) {
+                    score += 0.08
                 }
-                if (wordsArray[i].capitalize() == wordsArray[i]) {
-                    score += 0.3
+                else{
+                    score += 0.1
                 }
-                if (i < (len / 3)) {
-                    score += 0.2
-                } else {
-                    if (i < (len * 2 / 3)) {
-                        score += 0.25
-                    }
+                if (wordsArray[i].capitalize(Locale.ROOT) == wordsArray[i]) {
+                    score += 0.1
+                }
+                if(len>20){
+                    score -= 0.5
+                }
+
+                if (specialCharPattern.matcher(wordsArray[i]).find()) {
+                    score -= 0.2
+                }
+                if (moreThanThreeDigitsPattern.matcher(wordsArray[i]).find()) {
+                    score -= 0.5
                 }
             }
 
@@ -361,10 +364,13 @@ class MainActivity : AppCompatActivity() {
                 if ((num!= 9.0) && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0  || (num - 9) % 10 == 0.0 )) {
                     mscore += 0.3
                 }
+                if((num==400.00)&&wordsArray[i+1].toDoubleOrNull()!=null){
+                    mscore -= 0.5
+                }
                 //3rd condition
                 if (mrpLineArray.contains(wordsArray[i])) {
                     //showToast("Line")
-                    mscore += 0.5
+                    mscore += 100
                 }
                 if (2020 < num && num < 2030) {
                     mscore -= 0.1
@@ -419,9 +425,9 @@ class MainActivity : AppCompatActivity() {
         val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
         var max1 = wordsArray[i1]
         val max1Score = scoreArr[i1]
-//        scoreArr[i1] = 0.0
-//        val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
-//        max1 += " "+ wordsArray[i2]
+        scoreArr[i1] = 0.0
+        val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
+        val max2 = wordsArray[i2]
         //val max2Score = scoreArr[i2]
 //        scoreArr[i2] = 0.0
 //        val i3 = scoreArr.indexOf(scoreArr.maxOrNull())
@@ -431,11 +437,13 @@ class MainActivity : AppCompatActivity() {
         val m1 = wordsArray[j1]
         val m1Score = mscoreArr[j1]
 
-        var finalProd = ""
+        var finalProd = max1
         var flag = 0
         for (block in text.textBlocks) {
             if(flag==1){
-                finalProd += " " +  block.text
+                if(block.text.toString().contains(max2)){
+                    finalProd = max1 + block.text
+                }
                 break
             }
             for (line in block.lines) {
@@ -444,11 +452,9 @@ class MainActivity : AppCompatActivity() {
                         finalProd = block.text
                         flag = 1
                     }
-
                 }
             }
         }
-
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
         return arrayListOf(finalProd, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP,max1)

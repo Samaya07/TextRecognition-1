@@ -52,19 +52,19 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     val mScoreArray = result[4]
                     val mrpScore = mScore.toDouble()
                     val intScorer = scorer.toDouble()
-//                    if(intScorer>maxScore){
-//                        maxScore = intScorer
+                    if(intScorer>=maxScore){
+                        maxScore = intScorer
                         finalProduct = result[0].toString()
 
-//                    }
-//                    if(mrpScore>maxMRPScore){
-//                        maxMRPScore = mrpScore
+                    }
+                    if(mrpScore>=maxMRPScore){
+                        maxMRPScore = mrpScore
                     finalMRP = if(mrpScore>0) {
                         result[2].toString()
                     } else{
                         "Not found"
                     }
-//                    }
+                    }
 //Date Function
                     val dates = ep.extractDates(recognizedText)
                     val manufacturingDate = dates.first
@@ -95,13 +95,15 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     }*/
                     finalResult =
                         "Product: $finalProduct\n"+
-                                "Max product: ${result[7]}\n" +
+                                "Max product: ${result[7]}\n\n" +
+                                "${result[6]}\n"+
                                 "Price:$finalMRP\n" +
-                                "Price Array$mScoreArray\n" +
                                 "MRP Score:$mScore\n" +
-                                "Words Array:$wordsArrayDisplay\n" +
+                                "Price Array$mScoreArray\n\n" +
+                                "Words Array:$wordsArrayDisplay\n\n" +
                                 "Date is: ${finalMFG}\n${finalEXP}\n" +
-                                "${result[6]}"
+                                "Final prod $finalProduct\n"+
+                                "Final MRP $finalMRP"
                     //recognizedTextEt.setText(finalResult)
                     Log.i(TAG,"fr:$finalResult")
                     overlayView.updateElements(finalResult)
