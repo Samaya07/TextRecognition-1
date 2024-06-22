@@ -52,24 +52,25 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     val mScoreArray = result[4]
 
 //Picking Final Product
-                    if(pScore>maxScore){
-                        maxScore = pScore
-                        if(result[0].toString().length >= finalProduct.length)
+                    if(pScore>=maxScore){
+                        if(result[0].toString().length>=finalProduct.length)
                         {
                             finalProduct = result[0].toString()
+                            maxScore = pScore
                         }
 
                     }
 
 //Picking Final MRP
                     if(mScore>maxMRPScore) {
-                        maxMRPScore = mScore
-                        finalMRP = result[2].toString()
-                    }
-                    finalMRP = if(maxMRPScore>0.0) {
-                        result[2].toString()
-                    } else{
-                        "Not found"
+                        if(mScore>=0.0){
+                            finalMRP = result[2].toString()
+                            maxMRPScore = mScore
+                        }
+                        else{
+                            finalMRP = "Not found"
+                        }
+
                     }
 
 //Date Function
