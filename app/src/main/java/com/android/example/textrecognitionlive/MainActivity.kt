@@ -28,7 +28,6 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.android.example.textrecognitionlive.databinding.ActivityMainBinding
-import com.google.firebase.encoders.annotations.Encodable.Ignore
 import com.google.mlkit.vision.text.Text
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -324,7 +323,7 @@ class MainActivity : AppCompatActivity() {
                 break
             }
         }
-        val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        val mrpLineArray = mrpLine.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
 
         val specialCharPattern = Pattern.compile("[^a-zA-Z0-9]")
         val moreThanThreeDigitsPattern = Pattern.compile("\\d{4,}")
@@ -426,7 +425,7 @@ class MainActivity : AppCompatActivity() {
 
         //Setting up max scorers
         val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
-        var max1 = wordsArray[i1]
+        val max1 = wordsArray[i1]
         val max1Score = scoreArr[i1]
         scoreArr[i1] = 0.0
         val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
@@ -502,10 +501,6 @@ class MainActivity : AppCompatActivity() {
     fun extractDates(text: String): Pair<String?, String?> {
         val potentialDates = mutableListOf<String>()
 
-        // Regex for DD/MM/YYYY, DD/MM/YY, DDMMyy, DD.MM.YYYY, and DD.MM.YY formats
-        //val dateRegex = """\b\d{2}\s*[-/.\s]\s*\d{2}\s*[-/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3,}\s*\d{2,4}\b""".toRegex()
-        //val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
-
         val dateRegex = Regex("""(?ix)
 \s*
 (?:
@@ -513,8 +508,8 @@ class MainActivity : AppCompatActivity() {
   (\d{1,2})[/.](\d{1,2})[/.](\d{2}) |  # Format: DD/MM/YY, DD.MM.YY
   (\d{4})[/.](\d{1,2})[/.](\d{1,2}) |  # Format: YYYY/MM/DD, YYYY.MM.DD
   
-  (\d{1,2})[/-](\d{4}) |  # Format: MM/YYYY, MM-YYYY
-  (\d{1,2})[/-](\d{2}) |  # Format: MM/YY, MM-YY
+  (\d{1,2})/(\d{4}) |  # Format: MM/YYYY
+  (\d{1,2})/(\d{2}) |  # Format: MM/YY
 
   
   (\d{1,2})-(\d{1,2})-(\d{4}) |  # Format: DD-MM-YYYY
@@ -523,16 +518,13 @@ class MainActivity : AppCompatActivity() {
   
   \d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})|\d{2}\s*[A-Z]{3}\s*\d{2} |
   
-  # Formats with Month Names
-  (\d{1,2}) \s* ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec) (\d{4}) |  # DD MMM YYYY
-  ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec) (\d{4}) | #MMM YYYY
-  ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec) (\d{2}) | #MMM YY
+  # Formats with Month Names    
+  (\d{1,2})\s*([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) |  # DD MMM YYYY
+  ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) | #MMM YYYY
+  ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{2}) | #MMM YY
 )
-\s*(?!\w)
+\s*(?)
 """.trimMargin())
-
-
-
 
         // Find all potential dates using the regex
         dateRegex.findAll(text).forEach { match ->
@@ -572,8 +564,8 @@ class MainActivity : AppCompatActivity() {
                 SimpleDateFormat("MMM yyyy", Locale.ENGLISH),
                 SimpleDateFormat("MMM yy", Locale.ENGLISH),
                 SimpleDateFormat("MM/yy", Locale.ENGLISH),
-                SimpleDateFormat("MM-yy", Locale.ENGLISH),
-                SimpleDateFormat("MM-yyyy", Locale.ENGLISH),
+//                SimpleDateFormat("MM-yy", Locale.ENGLISH),
+//                SimpleDateFormat("MM-yyyy", Locale.ENGLISH),
             )
 
             for (format in formats) {
@@ -595,7 +587,20 @@ class MainActivity : AppCompatActivity() {
 
         // Assuming the first sorted date is manufacturing and the second is expiry (adjust logic if needed)
         val manufacturingDate = sortedDates.firstOrNull()
-        val expiryDate = sortedDates.getOrNull(1)
+        var expiryDate = sortedDates.getOrNull(1)
+
+        val expiry = Regex("""(?ix)(Best Before| Use Before)""")
+
+        val lines = text.split("\n").toTypedArray()
+
+        for (line in lines){
+            expiryDate = if(line.contains(expiry))
+                line
+            else if(manufacturingDate != expiryDate && manufacturingDate!=null && expiryDate!=null)
+                sortedDates.getOrNull(1)
+            else
+                null
+        }
 
         return manufacturingDate to expiryDate
         //return finalMFG to finalEXP
