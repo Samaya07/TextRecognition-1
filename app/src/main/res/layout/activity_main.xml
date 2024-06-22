@@ -12,7 +12,11 @@
             <androidx.camera.view.PreviewView
                 android:id="@+id/viewFinder"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent" >
+
+
+
+            </androidx.camera.view.PreviewView>
 
             <SurfaceView
                 android:id="@+id/overlay"
@@ -23,21 +27,49 @@
                 app:layout_constraintBottom_toBottomOf="@id/viewFinder"
                 app:layout_constraintTop_toTopOf="@id/viewFinder" />
 
-            <com.android.example.textrecognitionlive.DetectionAreaView
+
+            <!--<com.android.example.textrecognitionlive.DetectionAreaView
                 android:id="@+id/detectionAreaView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@android:color/transparent" />
+                android:background="@android:color/transparent" />-->
+    <Button
+        android:id="@+id/confirm_button"
+        android:layout_width="100dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="480dp"
+        android:layout_marginStart="20dp"
+        android:elevation="2dp"
+        android:text="@string/confirm"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-            <TextView
-                android:id="@+id/recogText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:background="@android:color/black"
-                android:textColor="@android:color/white"
-                android:padding="16dp"
-                android:textSize="12sp"/>
+    <Button
+        android:id="@+id/redo_button"
+        android:layout_width="100dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="480dp"
+        android:layout_marginStart="290dp"
+        android:elevation="2dp"
+        android:text="@string/redo"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+
+
+
+
+        <TextView
+            android:id="@+id/recogText"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:layout_alignParentBottom="true"
+            android:background="@android:color/black"
+            android:padding="16dp"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+</RelativeLayout>
+
+
 
 
     <!--<com.android.example.textrecognitionlive.GraphicOverlay
@@ -76,4 +108,3 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent=".50" />-->
 
-</RelativeLayout>
