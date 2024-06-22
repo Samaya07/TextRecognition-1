@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">TextRecognitionLive</string>
-    <string name="redo">Redo</string>
-    <string name="confirm">Confirm</string>
-    <string name="stop_capture">Stop Capture</string>
+    <string name="stop">Stop</string>
+    <string name="start">Start</string>
 </resources>

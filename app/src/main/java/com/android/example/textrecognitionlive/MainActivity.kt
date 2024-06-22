@@ -61,12 +61,6 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
     private lateinit var previewView: PreviewView
     private lateinit var overlayView: SurfaceView
 
-
-
-
-
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -84,34 +78,21 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
         if (allPermissionsGranted()) {
 
             //startCamera()
-            viewBinding.confirmButton.setOnClickListener{ startCamera() }
+            viewBinding.startButton.setOnClickListener{ startCamera() }
+            viewBinding.stopButton.setOnClickListener { stopCamera() }
             //detectionAreaView.setDetectionArea(80f, 400f, 650f, 600f)
 
         } else {
             requestPermissions()
         }
 
-        // Set up the listeners for take photo and video capture buttons
-
-        //viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
-
-        //viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
-
-        viewBinding.redoButton.setOnClickListener { stopFunction() }
-
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
-
-
-    private fun confirmData()
-    {
-    }
-
 
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private fun stopFunction()
+    private fun stopCamera()
     {
         cameraProvider.unbindAll()
     }
@@ -135,6 +116,7 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
 
 
             // Preview
+
             val preview = Preview.Builder()
                 .setTargetAspectRatio(screenAspectRatio)
                 .setTargetRotation(rotation)
@@ -142,15 +124,44 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
                 .also {
                     it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
                 }
-            Log.i(TAG,"before call!")
 
 
 
 
-            Log.i(TAG,"recorder: $videoCapture")
+
+            //Log.i(TAG,"recorder: $videoCapture")
 
             val imageCropPercentages = MutableLiveData<Pair<Int,Int>>()
                 .apply{ value = Pair(DESIRED_HEIGHT_CROP_PERCENT, DESIRED_WIDTH_CROP_PERCENT)}
+
+            Log.i(TAG,"before call!")
+
+            overlayView.apply {
+                setZOrderOnTop(true)
+                holder.setFormat(PixelFormat.TRANSPARENT)
+                holder.addCallback(object : SurfaceHolder.Callback {
+                    override fun surfaceChanged(
+                        holder: SurfaceHolder,
+                        format: Int,
+                        width: Int,
+                        height: Int
+                    ) {
+                    }
+
+                    override fun surfaceDestroyed(holder: SurfaceHolder) {}
+
+                    override fun surfaceCreated(holder: SurfaceHolder) {
+                        drawOverlay(
+                            overlayView.holder.lockCanvas(),
+                            holder,
+                            DESIRED_HEIGHT_CROP_PERCENT,
+                            DESIRED_WIDTH_CROP_PERCENT
+                        )
+                    }
+                })
+            }
+
+            Log.i(TAG, "aftercall")
 
 
             val imageAnalysis = ImageAnalysis.Builder()
@@ -169,42 +180,11 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
                 }
 
            // val viewLifecycleOwner: LifecycleOwner
-            /*val canvas = overlayView.holder.lockCanvas()
-            Log.i(TAG,"CAN: $canvas")
+            val canvas = overlayView.holder.lockCanvas()
+            /*Log.i(TAG,"CAN: $canvas")
             imageCropPercentages.observe(
                 lifecycleOwner!!,
                 Observer { drawOverlay(canvas,overlayView.holder, it.first, it.second) })*/
-            //drawOverlay(overlayView.holder, 8, 74)
-
-            overlayView.apply {
-                setZOrderOnTop(true)
-                holder.setFormat(PixelFormat.TRANSPARENT)
-                holder.addCallback(object : SurfaceHolder.Callback {
-                    override fun surfaceChanged(
-                        holder: SurfaceHolder,
-                        format: Int,
-                        width: Int,
-                        height: Int
-                    ) {
-                    }
-
-                    override fun surfaceDestroyed(holder: SurfaceHolder) {}
-
-                    override fun surfaceCreated(holder: SurfaceHolder) {
-                        holder.let {
-                            drawOverlay(
-                                overlayView.holder.lockCanvas(),
-                                it,
-                                DESIRED_HEIGHT_CROP_PERCENT,
-                                DESIRED_WIDTH_CROP_PERCENT
-                            )
-                        }
-                    }
-                })
-            }
-
-
-
 
 
             // Select back camera as a default
@@ -257,6 +237,7 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
     ) {
         //Log.i(TAG, holder.toString())
         //val canvas = holder.lockCanvas()
+        Log.i(TAG, "drawover")
         Log.i(TAG, canvas.toString())
         val bgPaint = Paint().apply {
             alpha = 140
