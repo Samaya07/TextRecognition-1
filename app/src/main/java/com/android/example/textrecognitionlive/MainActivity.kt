@@ -331,7 +331,7 @@ class MainActivity : AppCompatActivity() {
         val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
 
         for (i in wordsArray.indices) {
-            if (wordsArray[i].length  > 3) {
+            if (wordsArray[i].length  >= 3) {
                 //Higher uppercase socre for local products
                 if (wordsArray[i].uppercase()==wordsArray[i] && wordsArray[i].toDoubleOrNull()==null) {
                     score += 0.2
@@ -379,7 +379,7 @@ class MainActivity : AppCompatActivity() {
                     mscore -= 0.5
                 }
                 //3rd condition
-                if( i+1<wordsArray.size-1 && wordsArray[i+1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n)\b""",RegexOption.IGNORE_CASE))){
+                if( i+1<wordsArray.size-1 && wordsArray[i+1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9)\b""",RegexOption.IGNORE_CASE))){
                     mscore -= 0.3
                 }
                 if (mrpLineArray.contains(wordsArray[i])) {
@@ -437,8 +437,8 @@ class MainActivity : AppCompatActivity() {
 
         //Setting up max scorers
         val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
-        var max1 = wordsArray[i1]
-        val max1Score = scoreArr[i1]
+        val max1 = wordsArray[i1]
+        var max1Score = scoreArr[i1]
         scoreArr[i1] = 0.0
         val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
         val max2 = wordsArray[i2]
@@ -470,6 +470,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+
+
+//Final Prod Return conditions
+        val finaProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        if (specialCharPattern.matcher(finalProd).find() && finaProdArray.size>=3) {
+            finalProd = "Not found"
+            max1Score = 0.0
+        }
 
         return arrayListOf(finalProd, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP,max1)
         //, wordsArray, mrpValue)
