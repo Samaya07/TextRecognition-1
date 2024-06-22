@@ -15,6 +15,7 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.SurfaceHolder
@@ -73,6 +74,7 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
         //overlayView = findViewById(R.id.overlayView)
         //detectionAreaView = findViewById((R.id.detectionAreaView))
         recognizedTextV = findViewById(R.id.recogText)
+        recognizedTextV.movementMethod = ScrollingMovementMethod()
         previewView = findViewById(R.id.viewFinder)
         overlayView = findViewById(R.id.overlay)
         //recognizedTextV = findViewById(R.id.recogText)
@@ -81,7 +83,8 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
         // Request camera permissions
         if (allPermissionsGranted()) {
 
-            startCamera()
+            //startCamera()
+            viewBinding.confirmButton.setOnClickListener{ startCamera() }
             //detectionAreaView.setDetectionArea(80f, 400f, 650f, 600f)
 
         } else {
@@ -93,27 +96,25 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
         //viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
 
         //viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
-        viewBinding.confirmButton.setOnClickListener{ storeData() }
-        viewBinding.redoButton.setOnClickListener { redoFunction() }
+
+        viewBinding.redoButton.setOnClickListener { stopFunction() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
 
-    private fun storeData()
+    private fun confirmData()
     {
-
     }
-
-    private fun redoFunction()
-    {
-
-    }
-
 
 
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
+    private lateinit var cameraProvider: ProcessCameraProvider
 
+    private fun stopFunction()
+    {
+        cameraProvider.unbindAll()
+    }
     private fun startCamera() {
 
         cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -123,7 +124,7 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
 
         cameraProviderFuture.addListener({
             // Used to bind the lifecycle of cameras to the lifecycle owner
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+            cameraProvider = cameraProviderFuture.get()
             //val cameraSource = CameraSource.Builder().setRequestedFps()
 
             val metrics = DisplayMetrics().also { previewView.display.getRealMetrics(it) }
