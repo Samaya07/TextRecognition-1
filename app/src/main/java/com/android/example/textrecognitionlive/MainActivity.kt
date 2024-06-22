@@ -4,6 +4,7 @@ package com.android.example.textrecognitionlive
 //import com.google.android.gms.vision.Detector
 //import com.google.mlkit.vision.common.InputImage
 //import com.google.mlkit.vision.text.TextRecognition
+//import android.widget.Toast
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
@@ -608,8 +609,8 @@ class MainActivity : AppCompatActivity() {
 
 
 
-    private fun showToast(message: String)
-    {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
+//    private fun showToast(message: String)
+//    {
+//        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+//    }
 }
