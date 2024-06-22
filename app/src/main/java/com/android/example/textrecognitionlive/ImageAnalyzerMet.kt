@@ -38,24 +38,25 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     // Handle the recognized text
                     val ep = MainActivity()
 
-                    val result = ep.extractProduct(visionText)
-                    arrayOfProds.add(result)
+                    val productResult = ep.extractProduct(visionText)
+                    val mrpResult = ep.extractMrp(visionText)
+//                    arrayOfProds.add(result)
 
                     val recognizedText = visionText.text
 //                    val wordsArray = recognizedText.split("\\s+".toRegex()).toTypedArray()
 //                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
                     //Picking max score product
-                    val pScore = result[1].toString().toDouble()
-                    val mScore = result[3].toString().toDouble()
-                    val wordsArrayDisplay = result[5]
-                    val mScoreArray = result[4]
+                    val pScore = productResult[1].toString().toDouble()
+                    val mScore = mrpResult[1].toString().toDouble()
+                    val wordsArrayDisplay = productResult[2]
+                    val mScoreArray = mrpResult[2]
 
 //Picking Final Product
                     if(pScore>=maxScore){
-                        if(result[0].toString().length>=finalProduct.length)
+                        if(productResult[0].toString().length>=finalProduct.length)
                         {
-                            finalProduct = result[0].toString()
+                            finalProduct = productResult[0].toString()
                             maxScore = pScore
                         }
 
@@ -64,7 +65,7 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 //Picking Final MRP
                     if(mScore>maxMRPScore) {
                         if(mScore>=0.0){
-                            finalMRP = result[2].toString()
+                            finalMRP = mrpResult[0].toString()
                             maxMRPScore = mScore
                         }
                         else{
@@ -102,11 +103,11 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 
                     }*/
                     finalResult =
-                                "Max product: ${result[7]}\n\n" +
+                                "Max product: ${productResult[0]}\n\n" +
                                 "Score Prod: $pScore\n\n"        +
                                 "Price:$finalMRP\n" +
                                 "MRP Score:$mScore\n" +
-                                "${result[6]}\n"+
+                                "${mrpResult[3]}\n"+
                                 "Price Array$mScoreArray\n\n" +
                                 "Words Array:$wordsArrayDisplay\n\n" +
                                 "MFG date is: ${finalMFG}\nEXP date is: ${finalEXP}\n\n" +
