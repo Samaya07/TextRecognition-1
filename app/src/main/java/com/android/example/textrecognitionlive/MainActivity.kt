@@ -265,11 +265,11 @@ class MainActivity : AppCompatActivity() {
                         val dx1 = (corners[0].x - corners[3].x).toDouble()
                         val dy1 = (corners[0].y - corners[3].y).toDouble()
                         val len1 = sqrt(dx1 * dx1 + dy1 * dy1)
-                        val dx2 = (corners[2].x - corners[3].x).toDouble()
-                        val dy2 = (corners[2].y - corners[3].y).toDouble()
-                        val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
-                        size = (len1 + len2) * 2
-//                        size = len1
+//                        val dx2 = (corners[2].x - corners[3].x).toDouble()
+//                        val dy2 = (corners[2].y - corners[3].y).toDouble()
+//                        val len2 = sqrt(dx2 * dx2 + dy2 * dy2)
+//                        size = (len1 + len2) * 2
+                        size = len1
                     }
                     if (elementText.matches(Regex("\\d+(\\.\\d+)?"))) {
                         var sizeM = 0.0
@@ -324,36 +324,44 @@ class MainActivity : AppCompatActivity() {
                 break
             }
         }
-        val mrpLineArray = mrpLine.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
 
         val specialCharPattern = Pattern.compile("[^a-zA-Z0-9]")
         val moreThanThreeDigitsPattern = Pattern.compile("\\d{4,}")
-        for (i in wordsArray.indices) {
-            if (wordsArray[i].length  > 3) {
-                if (wordsArray[i].uppercase() != wordsArray[i] && wordsArray[i].toDoubleOrNull()==null) {
-                    score += 0.08
-                }
-                else{
-                    score += 0.1
-                }
-                if (wordsArray[i].capitalize(Locale.ROOT) == wordsArray[i] && wordsArray[i].toDoubleOrNull()==null) {
-                    score += 0.1
-                }
-                if(len>20){
-                    score -= 0.5
-                }
+        val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
 
+        for (i in wordsArray.indices) {
+            if (wordsArray[i].length  >= 3) {
+                //Higher uppercase socre for local products
+                if (wordsArray[i].uppercase()==wordsArray[i] && wordsArray[i].toDoubleOrNull()==null) {
+                    score += 0.2
+                }
+                else {
+                    //Higher capitalizaton score for famous and sophisticated products
+                    if (wordsArray[i].capitalize(Locale.ROOT) == wordsArray[i] && wordsArray[i].toDoubleOrNull() == null) {
+                        score += 0.16
+                    }
+                    else{
+                        score+=0.1
+                    }
+                }
+                //Lower for causal products(generally rare)
+                if(len>20){
+                    score -= 0.3
+                }
+                if (alphabetOnlyPattern.matches(wordsArray[i])) {
+                    score += 0.23
+                }
                 if (specialCharPattern.matcher(wordsArray[i]).find()) {
-                    score -= 1
+                    score -= 0.4
                 }
                 if (moreThanThreeDigitsPattern.matcher(wordsArray[i]).find()) {
-                    score -= 0.9
+                    score -= 0.4
                 }
                 if (i>0 && wordsArray[i-1].contains(Regex("""\b(item|product|tem|roduct|ite|produc|roduc)\b""",RegexOption.IGNORE_CASE))) {
                     score += 1
                 }
             }
-
             if(wordsArray[i].toDoubleOrNull()!=null) {
                 val num = wordsArray[i].toDouble()
                 mscore += 0.05
@@ -361,7 +369,7 @@ class MainActivity : AppCompatActivity() {
                     mscore += 0.5
                 }
                 if(num==2.0){
-                    score+=0.3
+                    mscore+=0.3
                 }
                 //2nd condition
                 if ((num!= 9.0) && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0  || (num - 9) % 10 == 0.0 )) {
@@ -371,9 +379,12 @@ class MainActivity : AppCompatActivity() {
                     mscore -= 0.5
                 }
                 //3rd condition
+                if( i+1<wordsArray.size-1 && wordsArray[i+1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9)\b""",RegexOption.IGNORE_CASE))){
+                    mscore -= 0.3
+                }
                 if (mrpLineArray.contains(wordsArray[i])) {
                     //showToast("Line")
-                    mscore += 100
+                    mscore += 0.4
                 }
                 if (2020 < num && num < 2030) {
                     mscore -= 0.1
@@ -391,10 +402,10 @@ class MainActivity : AppCompatActivity() {
             //Might need changes
             if(wordsArray[i].contains("/-")){
                 if(i>1 && wordsArray[i-1].toDoubleOrNull()!=null){
-                    mscoreArr[i-1] += 1.0
+                    mscoreArr[i-1] += 0.6
                 }
                 else {
-                    mscore += 2
+                    mscore += 1.3
                 }
             }
             mscoreArr.add(mscore)
@@ -402,13 +413,13 @@ class MainActivity : AppCompatActivity() {
             mscore=0.0
             score = 0.0
         }
-        var adder = 0.7
+        var adder = 0.5
         for (i in top5Elements.indices) {
             for (j in wordsArray.indices) {
                 if (top5Elements[i] == wordsArray[j])
                 {
                     scoreArr[j] += adder
-                    adder -= 0.2
+                    adder -= 0.1
                 }
             }
         }
@@ -427,7 +438,7 @@ class MainActivity : AppCompatActivity() {
         //Setting up max scorers
         val i1 = scoreArr.indexOf(scoreArr.maxOrNull())
         val max1 = wordsArray[i1]
-        val max1Score = scoreArr[i1]
+        var max1Score = scoreArr[i1]
         scoreArr[i1] = 0.0
         val i2 = scoreArr.indexOf(scoreArr.maxOrNull())
         val max2 = wordsArray[i2]
@@ -459,6 +470,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+
+
+//Final Prod Return conditions
+        val finaProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        if (specialCharPattern.matcher(finalProd).find() && finaProdArray.size>=3) {
+            finalProd = "Not found"
+            max1Score = 0.0
+        }
 
         return arrayListOf(finalProd, max1Score, m1, m1Score, mscoreArr, wordsArrayReturn,top3MRP,max1)
         //, wordsArray, mrpValue)

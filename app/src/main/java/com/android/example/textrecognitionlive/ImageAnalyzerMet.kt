@@ -46,25 +46,33 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 //                    val wordsString = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
                     //Picking max score product
-                    val scorer = result[1].toString()
-                    val mScore = result[3].toString()
+                    val pScore = result[1].toString().toDouble()
+                    val mScore = result[3].toString().toDouble()
                     val wordsArrayDisplay = result[5]
                     val mScoreArray = result[4]
-                    val mrpScore = mScore.toDouble()
-                    val intScorer = scorer.toDouble()
-                    if(intScorer>=maxScore){
-                        maxScore = intScorer
-                        finalProduct = result[0].toString()
+
+//Picking Final Product
+                    if(pScore>=maxScore){
+                        if(result[0].toString().length>=finalProduct.length)
+                        {
+                            finalProduct = result[0].toString()
+                            maxScore = pScore
+                        }
 
                     }
-                    if(mrpScore>=maxMRPScore){
-                        maxMRPScore = mrpScore
-                    finalMRP = if(mrpScore>0) {
-                        result[2].toString()
-                    } else{
-                        "Not found"
+
+//Picking Final MRP
+                    if(mScore>maxMRPScore) {
+                        if(mScore>=0.0){
+                            finalMRP = result[2].toString()
+                            maxMRPScore = mScore
+                        }
+                        else{
+                            finalMRP = "Not found"
+                        }
+
                     }
-                    }
+
 //Date Function
                     val dates = ep.extractDates(recognizedText)
                     val manufacturingDate = dates.first
@@ -81,9 +89,9 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 
                     if(expiryDate!=null && !finalEXP.contains("/") && expiryDate.contains("/")) finalEXP = expiryDate
 
-                    //val wordsArray = result[5].joinToString(prefix = "[", postfix = "]", separator = ", ")
-                    //Printing final
-                    //frameIndex += 1
+//                    val wordsArray = result[5].joinToString(prefix = "[", postfix = "]", separator = ", ")
+//                    Printing final
+//                    frameIndex += 1
                     /*if(frameIndex == arrayBitmaps.size)
                     {
                         finalResult =
@@ -94,16 +102,18 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
 
                     }*/
                     finalResult =
-                        "Product: $finalProduct\n"+
                                 "Max product: ${result[7]}\n\n" +
-                                "${result[6]}\n"+
+                                "Score Prod: $pScore\n\n"        +
                                 "Price:$finalMRP\n" +
                                 "MRP Score:$mScore\n" +
+                                "${result[6]}\n"+
                                 "Price Array$mScoreArray\n\n" +
                                 "Words Array:$wordsArrayDisplay\n\n" +
-                                "Date is: ${finalMFG}\n${finalEXP}\n" +
+                                "MFG date is: ${finalMFG}\nEXP date is: ${finalEXP}\n\n" +
                                 "Final prod $finalProduct\n"+
-                                "Final MRP $finalMRP"
+                                "Final MRP $finalMRP\n" +
+                                "Prod max score:$maxScore\n"+
+                                "MRP max score: $maxMRPScore"
                     //recognizedTextEt.setText(finalResult)
                     Log.i(TAG,"fr:$finalResult")
                     overlayView.updateElements(finalResult)
