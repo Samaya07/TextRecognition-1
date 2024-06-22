@@ -53,13 +53,16 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     val mScoreArray = mrpResult[2]
 
 //Picking Final Product
-                    if(pScore>=maxScore){
+                    if(pScore>maxScore){
+                            finalProduct = productResult[0].toString()
+                            maxScore = pScore
+                    }
+                    else if(pScore==maxScore){
                         if(productResult[0].toString().length>=finalProduct.length)
                         {
                             finalProduct = productResult[0].toString()
                             maxScore = pScore
                         }
-
                     }
 
 //Picking Final MRP
@@ -75,20 +78,20 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                     }
 
 //Date Function
-                    val dates = ep.extractDates(recognizedText)
-                    val manufacturingDate = dates.first
-                    val expiryDate = dates.second
-                    if(manufacturingDate!=null && finalMFG!="") finalMFG = manufacturingDate
-
-                    if(expiryDate!=null && finalEXP!="") finalEXP = expiryDate
-
-                    if(manufacturingDate!=null && finalMFG.length < manufacturingDate.length) finalMFG = manufacturingDate
-
-                    if(expiryDate!=null && finalEXP.length < expiryDate.length) finalEXP = expiryDate
-
-                    if(manufacturingDate!=null && !finalMFG.contains("/") && manufacturingDate.contains("/")) finalMFG = manufacturingDate
-
-                    if(expiryDate!=null && !finalEXP.contains("/") && expiryDate.contains("/")) finalEXP = expiryDate
+//                    val dates = ep.extractDates(recognizedText)
+//                    val manufacturingDate = dates.first
+//                    val expiryDate = dates.second
+//                    if(manufacturingDate!=null && finalMFG!="") finalMFG = manufacturingDate
+//
+//                    if(expiryDate!=null && finalEXP!="") finalEXP = expiryDate
+//
+//                    if(manufacturingDate!=null && finalMFG.length < manufacturingDate.length) finalMFG = manufacturingDate
+//
+//                    if(expiryDate!=null && finalEXP.length < expiryDate.length) finalEXP = expiryDate
+//
+//                    if(manufacturingDate!=null && !finalMFG.contains("/") && manufacturingDate.contains("/")) finalMFG = manufacturingDate
+//
+//                    if(expiryDate!=null && !finalEXP.contains("/") && expiryDate.contains("/")) finalEXP = expiryDate
 
 //                    val wordsArray = result[5].joinToString(prefix = "[", postfix = "]", separator = ", ")
 //                    Printing final
@@ -110,7 +113,7 @@ class ImageAnalyzerMet(private val overlayView: GraphicOverlay) : ImageAnalysis.
                                 "${mrpResult[3]}\n"+
                                 "Price Array$mScoreArray\n\n" +
                                 "Words Array:$wordsArrayDisplay\n\n" +
-                                "MFG date is: ${finalMFG}\nEXP date is: ${finalEXP}\n\n" +
+//                                "MFG date is: ${finalMFG}\nEXP date is: ${finalEXP}\n\n" +
                                 "Final prod $finalProduct\n"+
                                 "Final MRP $finalMRP\n" +
                                 "Prod max score:$maxScore\n"+

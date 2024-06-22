@@ -298,7 +298,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
-
+        var mrpadder = 0.4
         for (i in wordsArray.indices) {
             if(wordsArray[i].toDoubleOrNull()!=null) {
                 val num = wordsArray[i].toDouble()
@@ -317,8 +317,8 @@ class MainActivity : AppCompatActivity() {
                     mscore -= 0.5
                 }
                 //3rd condition
-                if( i+1<wordsArray.size-1 && wordsArray[i+1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9)\b""",RegexOption.IGNORE_CASE))){
-                    mscore -= 0.3
+                if( i+1<wordsArray.size-1 && wordsArray[i+1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\b""",RegexOption.IGNORE_CASE))){
+                    mscore -= 0.5
                 }
                 if (mrpLineArray.contains(wordsArray[i])) {
                     //showToast("Line")
@@ -329,37 +329,30 @@ class MainActivity : AppCompatActivity() {
                 }
                 //4th condition
                 if (wordsArray[i] in blockArray) {
-                    //showToast("block")
                     mscore += 0.3
                 }
 //                if (i<(len*(2/3)) && i > (len*(1/3))) {
 //                    mscore += 0.1
 //                }
-
+                for (j in top3MRP.indices) {
+                        if (top3MRP[j].toDouble() == num) {
+                            mscore += mrpadder
+                            mrpadder -= 0.1
+                        }
+                }
             }
+
             //Might need changes
             if(wordsArray[i].contains("/-")){
                 if(i>1 && wordsArray[i-1].toDoubleOrNull()!=null){
-                    mscoreArr[i-1] += 0.6
+                    mscoreArr[i-1] += 0.8
                 }
-                else {
-                    mscore += 1.3
+                else{
+                    mscore += 2.0
                 }
             }
             mscoreArr.add(mscore)
             mscore=0.0
-        }
-
-        var mrpadder = 0.4
-        for (i in top3MRP.indices) {
-            for (j in wordsArray.indices) {
-                if(wordsArray[j].toDoubleOrNull()!=null) {
-                    if (top3MRP[i].toDouble() == wordsArray[j].toDouble()) {
-                        mscoreArr[j] += mrpadder
-                        mrpadder -= 0.1
-                    }
-                }
-            }
         }
 
         val j1 = mscoreArr.indexOf(mscoreArr.maxOrNull())
@@ -404,10 +397,9 @@ class MainActivity : AppCompatActivity() {
         //val recognizedTextLines = recognizedText.split("\n").toTypedArray()
 
         var score = 0.0
-
-        //var j = 1.0
-        val len = wordsArray.size.toDouble()
         val scoreArr = mutableListOf<Double>()
+        val len = wordsArray.size.toDouble()
+        var adder = 0.5
 
         //4th condition
         val specialCharPattern = Pattern.compile("[^a-zA-Z0-9]")
@@ -417,24 +409,27 @@ class MainActivity : AppCompatActivity() {
         for (i in wordsArray.indices) {
             if (wordsArray[i].length  >= 3) {
                 //Higher uppercase socre for local products
-                if (wordsArray[i].uppercase()==wordsArray[i] && wordsArray[i].toDoubleOrNull()==null) {
+                if (wordsArray[i].uppercase() == wordsArray[i] && wordsArray[i].toDoubleOrNull() == null) {
                     score += 0.2
-                }
-                else {
+                } else {
                     //Higher capitalizaton score for famous and sophisticated products
                     if (wordsArray[i].capitalize(Locale.ROOT) == wordsArray[i] && wordsArray[i].toDoubleOrNull() == null) {
                         score += 0.16
-                    }
-                    else{
-                        score+=0.1
+                    } else {
+                        score += 0.08
                     }
                 }
                 //Lower for causal products(generally rare)
-                if(len>20){
+                if (len > 15) {
                     score -= 0.3
                 }
+                if (len < 5) {
+                    score += 0.2
+                }
+                //Score for zoomed in scanning
+
                 if (alphabetOnlyPattern.matches(wordsArray[i])) {
-                    score += 0.23
+                    score += 0.15
                 }
                 if (specialCharPattern.matcher(wordsArray[i]).find()) {
                     score -= 0.4
@@ -442,24 +437,30 @@ class MainActivity : AppCompatActivity() {
                 if (moreThanThreeDigitsPattern.matcher(wordsArray[i]).find()) {
                     score -= 0.4
                 }
-                if (i>0 && wordsArray[i-1].contains(Regex("""\b(item|product|tem|roduct|ite|produc|roduc)\b""",RegexOption.IGNORE_CASE))) {
+                if (i > 0 && wordsArray[i - 1].contains(Regex("""\b(item|product|tem|roduct|ite|produc|roduc|tfm)\b""", RegexOption.IGNORE_CASE))) {
                     score += 1
+                }
+                for (j in top5Elements.indices) {
+                    if (top5Elements[j] == wordsArray[i]) {
+                        score += adder
+                        adder -= 0.1
+                    }
                 }
             }
 
             scoreArr.add(score)
             score = 0.0
         }
-        var adder = 0.5
-        for (i in top5Elements.indices) {
-            for (j in wordsArray.indices) {
-                if (top5Elements[i] == wordsArray[j])
-                {
-                    scoreArr[j] += adder
-                    adder -= 0.1
-                }
-            }
-        }
+//        var adder = 0.5
+//            for (j in wordsArray.indices) {
+//                for (i in top5Elements.indices) {
+//                if (top5Elements[i] == wordsArray[j])
+//                {
+//                    scoreArr[j] += adder
+//                    adder -= 0.1
+//                }
+//            }
+//        }
 
 
         //Setting up max scorers
@@ -493,7 +494,8 @@ class MainActivity : AppCompatActivity() {
 
 //Final Prod Return conditions
         val finaProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
-        if (specialCharPattern.matcher(finalProd).find() && finaProdArray.size>=3) {
+
+        if (specialCharPattern.matcher(finalProd).find() && finaProdArray.size>3) {
             finalProd = "Not found"
             max1Score = 0.0
         }
