@@ -1,6 +1,5 @@
 package com.android.example.textrecognitionlive.main
 
-//import androidx.databinding.DataBindingUtil.setContentView
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -73,6 +72,7 @@ class MainFragment : Fragment(){
     private lateinit var viewFinder: PreviewView
     private lateinit var overlay: SurfaceView
     private lateinit var recognizedTextV: TextView
+    private var flag = 1
 
     private val imageCropPercentages = MutableLiveData<Pair<Int, Int>>()
         .apply { value = Pair(DESIRED_HEIGHT_CROP_PERCENT, DESIRED_WIDTH_CROP_PERCENT) }
@@ -120,21 +120,38 @@ class MainFragment : Fragment(){
                 Log.i(TAG,"1")
 
                 val startBt = container.findViewById<Button>(R.id.start_button)
-                val stopBt = container.findViewById<Button>(R.id.stop_button)
-                stopBt.isEnabled = false
+                //val stopBt = container.findViewById<Button>(R.id.stop_button)
+                //stopBt.isEnabled = false
 
                 startBt.setOnClickListener {
 
-                    startBt.isEnabled = false
-                    stopBt.isEnabled = true
-                    setUpCamera()
+                    //startBt.isEnabled = false
+                    //stopBt.isEnabled = true
+                    //flag = 1
+                    if(flag == 1) {
+                        flag = 0
+                        startBt.apply{
+                            text = getString(R.string.stop)
+                        }
+                        setUpCamera()
+
+                    }
+                    else if(flag == 0)
+                    {
+                        flag = 1
+                        startBt.apply{
+                            text = getString(R.string.start)
+                        }
+                        stopCamera()
+
+                    }
                 }
 
-                stopBt.setOnClickListener {
+               /* stopBt.setOnClickListener {
                     stopCamera()
                     startBt.isEnabled = true
                     stopBt.isEnabled = false
-                }
+                }*/
 
                 /*startBt.apply {
                     text = getString(R.string.stop)

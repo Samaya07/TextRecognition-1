@@ -10,10 +10,7 @@ import com.android.example.textrecognitionlive.main.MainFragment
 class MainActivity : AppCompatActivity(), LifecycleOwner {
 
 
-    lateinit var viewBinding: ActivityMainBinding
-
-
-
+    private lateinit var viewBinding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
