@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "643928922168",
+    "project_id": "textrecognition-73419",
+    "storage_bucket": "textrecognition-73419.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:643928922168:android:cd4fd9a6d74256b13ceecd",
+        "android_client_info": {
+          "package_name": "com.android.example.textrecognitionlive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7Dofvq1DQA10IeSdU5jHF2BB_OsXFVew"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -118,18 +118,24 @@ class MainFragment : Fragment(){
                 // Keep track of the display in which this view is attached
                 displayId = viewFinder.display.displayId
                 Log.i(TAG,"1")
-                val startBt = view.findViewById<Button>(R.id.start_button)
-                val stopBt = view.findViewById<Button>(R.id.stop_button)
+
+                val startBt = container.findViewById<Button>(R.id.start_button)
+                val stopBt = container.findViewById<Button>(R.id.stop_button)
                 stopBt.isEnabled = false
+
                 startBt.setOnClickListener {
+
                     startBt.isEnabled = false
                     stopBt.isEnabled = true
-                    setUpCamera() }
+                    setUpCamera()
+                }
+
                 stopBt.setOnClickListener {
                     stopCamera()
                     startBt.isEnabled = true
                     stopBt.isEnabled = false
                 }
+
                 /*startBt.apply {
                     text = getString(R.string.stop)
                 }*/
@@ -175,6 +181,7 @@ class MainFragment : Fragment(){
     }
 
     private lateinit var cameraProvider: ProcessCameraProvider
+    private lateinit var cameraSelector: CameraSelector
 
     private fun setUpCamera() {
         Log.i(TAG,"2")
@@ -206,7 +213,12 @@ class MainFragment : Fragment(){
             .setTargetRotation(rotation)
             .build()
 
-        // Build the image analysis use case and instantiate our analyzer
+
+
+
+
+
+
         imageAnalyzer = ImageAnalysis.Builder()
             // We request aspect ratio but no resolution
             .setTargetAspectRatio(screenAspectRatio)
@@ -224,12 +236,16 @@ class MainFragment : Fragment(){
                     )
                 )
             }
+
+
+        // Build the image analysis use case and instantiate our analyzer
+
         Log.i(TAG,"4")
         imageCropPercentages.observe(viewLifecycleOwner,
             Observer { drawOverlay(overlay.holder, it.first, it.second) })
 
         // Select back camera since text detection does not work with front camera
-        val cameraSelector =
+        cameraSelector =
             CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
 
         try {
@@ -245,6 +261,8 @@ class MainFragment : Fragment(){
         } catch (exc: IllegalStateException) {
             Log.e(TAG, "Use case binding failed. This must be running on main thread.", exc)
         }
+
+
     }
 
     private fun drawOverlay(
