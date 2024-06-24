@@ -306,9 +306,9 @@ class ImageAnalyzerMet(
 
                     if(expiryDate!=null && finalEXP!="") finalEXP = expiryDate
 
-                    if(manufacturingDate!=null && finalMFG.length < manufacturingDate.length) finalMFG = manufacturingDate
+                    if(manufacturingDate!=null && finalMFG.length < manufacturingDate.length && manufacturingDate.contains("[/-.//s]")) finalMFG = manufacturingDate
 
-                    if(expiryDate!=null && finalEXP.length < expiryDate.length) finalEXP = expiryDate
+                    if(expiryDate!=null && finalEXP.length < expiryDate.length && expiryDate.contains("[/-.//s]")) finalEXP = expiryDate
 
                     if(manufacturingDate!=null && !finalMFG.contains("/") && manufacturingDate.contains("/")) finalMFG = manufacturingDate
 

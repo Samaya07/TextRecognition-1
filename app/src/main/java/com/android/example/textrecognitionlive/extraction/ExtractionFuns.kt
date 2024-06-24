@@ -6,12 +6,11 @@ import com.google.mlkit.vision.text.Text
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.regex.Pattern
 import kotlin.math.sqrt
 
 object ExtractionFuns {
 
-//MRP FUNCTION EXTRACTION
+    //MRP FUNCTION EXTRACTION
     fun extractMrp(text: Text): ArrayList<Any> {
 
         val recognizedText = text.text
@@ -105,7 +104,7 @@ object ExtractionFuns {
         return arrayListOf(m1, m1Score, mscoreArr, top3MRP)
     }
 
-//PRODUCT FUNCTION EXTRACTION
+    //PRODUCT FUNCTION EXTRACTION
     fun extractProduct(text: Text): ArrayList<Any> {
         val recognizedText = text.text
         data class ElementSize(val size: Double, val element: String)
@@ -185,28 +184,33 @@ object ExtractionFuns {
         return arrayListOf(finalProd, max1Score, wordsArrayReturn)
     }
 
-//DATE FUNCTION EXTRACTION
+    //DATE FUNCTION EXTRACTION
     fun extractDates(text: String): Pair<String?, String?> {
         val potentialDates = mutableListOf<String>()
 
-        val dateRegex = Regex("""(?ix)
+        val dateRegex = Regex(
+            """(?ix)
         \s*
         (?:
-          (\d{1,2})[/.](\d{1,2})[/.](\d{4}) |  # Format: DD/MM/YYYY, DD.MM.YYYY
-          (\d{1,2})[/.](\d{1,2})[/.](\d{2}) |  # Format: DD/MM/YY, DD.MM.YY
-          (\d{4})[/.](\d{1,2})[/.](\d{1,2}) |  # Format: YYYY/MM/DD, YYYY.MM.DD
-          (\d{1,2})/(\d{4}) |  # Format: MM/YYYY
-          (\d{1,2})/(\d{2}) |  # Format: MM/YY
-          (\d{1,2})-(\d{1,2})-(\d{4}) |  # Format: DD-MM-YYYY
-          (\d{1,2})-(\d{1,2})-(\d{2}) |  # Format: DD-MM-YY
+          (\d{8}) |        // DDMMYYYY, MMDDYYYY, YYYYMMDD
+          (\d{6})  |
+          (\d{1,2})[/.](\d{1,2})[/.](\d{4}) |  // Format: DD/MM/YYYY, DD.MM.YYYY
+          (\d{1,2})[/.](\d{1,2})[/.](\d{2}) |  // Format: DD/MM/YY, DD.MM.YY
+          (\d{4})[/.](\d{1,2})[/.](\d{1,2}) |  // Format: YYYY/MM/DD, YYYY.MM.DD
+          (\d{1,2})/(\d{4}) |  // Format: MM/YYYY
+          (\d{1,2})/(\d{2}) |  // Format: MM/YY
+          (\d{1,2})-(\d{1,2})-(\d{4}) |  // Format: DD-MM-YYYY
+          (\d{1,2})-(\d{1,2})-(\d{2}) |  // Format: DD-MM-YY
           (\d{4})-(\d{1,2})-(\d{1,2}) |
           \d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})|\d{2}\s*[A-Z]{3}\s*\d{2} |
-          (\d{1,2})\s*([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) |  # DD MMM YYYY
-          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) | #MMM YYYY
-          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{2}) #MMM YY
+          (\d{1,2})\s*([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) |  // DD MMM YYYY
+          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) | // MMM YYYY
+          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{2}) | // MMM YY
+          (\d{2}?[/.-]?\s*[A-Za-z]{3,}?[/.-]?\s*\d{2,4})
         )
         \s*
-    """.trimMargin())
+    """.trimMargin()
+        )
 
         dateRegex.findAll(text).forEach { match ->
             potentialDates.add(match.value)
@@ -226,7 +230,10 @@ object ExtractionFuns {
                 "dd/MM/yy", "MM/dd/yy", "yy/MM/dd",
                 "dd-MM-yy", "MM-dd-yy", "yy-MM-dd",
                 "dd.MM.yy", "MM.dd.yy", "MM/yyyy",
-                "MMM yyyy", "MMM yy", "MM/yy"
+                "MMM yyyy", "MMM yy", "MM/yy",
+                "ddMMyy", "ddMMyyyy", "MMddyyyy", "MMddyy",
+                "yyyyMMdd", "yyMMdd", "dd-MMM-yyyy", "MMM-yyyy",
+                "MMM-yy", "MMM-yyyy", "MMMyyyy", "MMMyy"
             ).map { SimpleDateFormat(it, Locale.ENGLISH) }
 
             return formats.asSequence()
@@ -234,20 +241,137 @@ object ExtractionFuns {
                 .firstOrNull()
         }
 
-        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
-            .sortedBy { it.second }
+        fun levenshteinDistance(lhs: String, rhs: String): Int {
+            val lhsLength = lhs.length
+            val rhsLength = rhs.length
+
+            val dp = Array(lhsLength + 1) { IntArray(rhsLength + 1) }
+
+            for (i in 0..lhsLength) dp[i][0] = i
+            for (j in 0..rhsLength) dp[0][j] = j
+
+            for (i in 1..lhsLength) {
+                for (j in 1..rhsLength) {
+                    dp[i][j] = if (lhs[i - 1] == rhs[j - 1]) {
+                        dp[i - 1][j - 1]
+                    } else {
+                        minOf(dp[i - 1][j - 1] + 1, dp[i - 1][j] + 1, dp[i][j - 1] + 1)
+                    }
+                }
+            }
+
+            return dp[lhsLength][rhsLength]
+        }
+
+        val datePatterns = listOf(
+            "dd/MM/yyyy", "MM/dd/yyyy", "yyyy/MM/dd",
+            "dd-MM-yyyy", "MM-dd-yyyy", "yyyy-MM-dd",
+            "dd.MM.yyyy", "MM.dd.yyyy", "yyyy.MM.dd",
+            "dd MMM yyyy", "MMM dd yyyy", "yyyy MMM dd",
+            "dd/MM/yy", "MM/dd/yy", "yy/MM/dd",
+            "dd-MM-yy", "MM-dd-yy", "yy-MM-dd",
+            "dd.MM.yy", "MM.dd.yy", "MM/yyyy",
+            "MMM yyyy", "MMM yy", "MM/yy",
+            "ddMMyy", "ddMMyyyy", "MMddyyyy", "MMddyy",
+            "yyyyMMdd", "yyMMdd", "dd-MMM-yyyy", "MMM-yyyy",
+            "MMM-yy", "MMM-yyyy", "MMMyyyy", "MMMyy"
+        ).map { SimpleDateFormat(it, Locale.ENGLISH) }
+
+        val scoredDates = potentialDates.mapNotNull { dateStr ->
+            parseDate(dateStr)?.let {
+                val normalizedDateStr = dateStr.replace("[^\\d]".toRegex(), "")
+                val scores = datePatterns.map { format ->
+                    val sampleDateStr = format.format(Date())
+                    val sampleDateNormalized = sampleDateStr.replace("[^\\d]".toRegex(), "")
+                    levenshteinDistance(normalizedDateStr, sampleDateNormalized)
+                }
+                dateStr to scores.minOrNull()!!
+            }
+        }.sortedBy { it.second }
             .map { it.first }
 
-        val manufacturingDate = sortedDates.firstOrNull()
-        var expiryDate = sortedDates.getOrNull(1)
+        val manufacturingDate = scoredDates.firstOrNull()
+        var expiryDate = scoredDates.getOrNull(1)
 
-        val expiry = Regex("""(?ix)(Best Before| Use Before)""")
+        // Adjust for cases where text indicates expiry explicitly
+        val expiryPattern = Regex("""(?ix)(Best Before|Use Before)""")
         val lines = text.split("\n")
 
-        expiryDate = lines.find { it.contains(expiry) } ?: expiryDate
+        expiryDate = lines.find { it.contains(expiryPattern) } ?: expiryDate
 
         return manufacturingDate to expiryDate
     }
+
+//    fun extractDates(text: String): Pair<String?, String?> {
+//    val potentialDates = mutableListOf<String>()
+//
+//    val dateRegex = Regex(
+//        """(?ix)
+//        \s*
+//        (?:
+//          (\d{8}) |        // DDMMYYYY, MMDDYYYY, YYYYMMDD
+//          (\d{6})  |
+//          (\d{1,2})[/.](\d{1,2})[/.](\d{4}) |  # Format: DD/MM/YYYY, DD.MM.YYYY
+//          (\d{1,2})[/.](\d{1,2})[/.](\d{2}) |  # Format: DD/MM/YY, DD.MM.YY
+//          (\d{4})[/.](\d{1,2})[/.](\d{1,2}) |  # Format: YYYY/MM/DD, YYYY.MM.DD
+//          (\d{1,2})/(\d{4}) |  # Format: MM/YYYY
+//          (\d{1,2})/(\d{2}) |  # Format: MM/YY
+//          (\d{1,2})-(\d{1,2})-(\d{4}) |  # Format: DD-MM-YYYY
+//          (\d{1,2})-(\d{1,2})-(\d{2}) |  # Format: DD-MM-YY
+//          (\d{4})-(\d{1,2})-(\d{1,2}) |
+//          \d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})|\d{2}\s*[A-Z]{3}\s*\d{2} |
+//          (\d{1,2})\s*([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) |  # DD MMM YYYY
+//          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) | #MMM YYYY
+//          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{2}) |#MMM YY
+//          (\d{2}?[/.-]?\s*[A-Za-z]{3,}?[/.-]?\s*\d{2,4})
+//        )
+//        \s*
+//    """.trimMargin()
+//    )
+//
+//    dateRegex.findAll(text).forEach { match ->
+//        potentialDates.add(match.value)
+//        Log.i(ContentValues.TAG, match.value)
+//    }
+//
+//    if (potentialDates.isEmpty()) {
+//        return null to null
+//    }
+//
+//    fun parseDate(dateStr: String): Date? {
+//        val formats = listOf(
+//            "dd/MM/yyyy", "MM/dd/yyyy", "yyyy/MM/dd",
+//            "dd-MM-yyyy", "MM-dd-yyyy", "yyyy-MM-dd",
+//            "dd.MM.yyyy", "MM.dd.yyyy", "yyyy.MM.dd",
+//            "dd MMM yyyy", "MMM dd yyyy", "yyyy MMM dd",
+//            "dd/MM/yy", "MM/dd/yy", "yy/MM/dd",
+//            "dd-MM-yy", "MM-dd-yy", "yy-MM-dd",
+//            "dd.MM.yy", "MM.dd.yy", "MM/yyyy",
+//            "MMM yyyy", "MMM yy", "MM/yy",
+//            "ddMMyy", "ddMMyyyy", "MMddyyyy", "MMddyy",
+//            "yyyyMMdd", "yyMMdd", "dd-MMM-yyyy", "MMM-yyyy",
+//            "MMM-yy", "MMM-yyyy", "MMMyyyy", "MMMyy"
+//        ).map { SimpleDateFormat(it, Locale.ENGLISH) }
+//
+//        return formats.asSequence()
+//            .mapNotNull { format -> runCatching { format.parse(dateStr) }.getOrNull() }
+//            .firstOrNull()
+//    }
+//
+//        val sortedDates = potentialDates.mapNotNull { dateStr -> parseDate(dateStr)?.let { dateStr to it } }
+//            .sortedBy { it.second }
+//            .map { it.first }
+//
+//        val manufacturingDate = sortedDates.firstOrNull()
+//        var expiryDate = sortedDates.getOrNull(1)
+//
+//        val expiry = Regex("""(?ix)(Best Before| Use Before)""")
+//        val lines = text.split("\n")
+//
+//        expiryDate = lines.find { it.contains(expiry) } ?: expiryDate
+//
+//        return manufacturingDate to expiryDate
+//    }
 
 
 
