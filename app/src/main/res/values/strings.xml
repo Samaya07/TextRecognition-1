@@ -2,4 +2,5 @@
     <string name="app_name">TextRecognitionLive</string>
     <string name="stop">Stop</string>
     <string name="start">Start</string>
+    <string name="overlay_help">Center text in box</string>
 </resources>
