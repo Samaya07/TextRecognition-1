@@ -120,11 +120,19 @@ class MainFragment : Fragment(){
                 Log.i(TAG,"1")
                 val startBt = view.findViewById<Button>(R.id.start_button)
                 val stopBt = view.findViewById<Button>(R.id.stop_button)
+                stopBt.isEnabled = false
                 startBt.setOnClickListener {
+                    startBt.isEnabled = false
+                    stopBt.isEnabled = true
                     setUpCamera() }
                 stopBt.setOnClickListener {
                     stopCamera()
+                    startBt.isEnabled = true
+                    stopBt.isEnabled = false
                 }
+                /*startBt.apply {
+                    text = getString(R.string.stop)
+                }*/
 
                 // Set up the camera and its use cases
                 //setUpCamera()
@@ -246,10 +254,10 @@ class MainFragment : Fragment(){
     ) {
         val canvas = holder.lockCanvas()
         Log.i(TAG,"drawover")
-        val bgPaint = Paint().apply {
+        /*val bgPaint = Paint().apply {
             alpha = 140
         }
-        canvas.drawPaint(bgPaint)
+        canvas.drawPaint(bgPaint)*/
         val rectPaint = Paint()
         rectPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
         rectPaint.style = Paint.Style.FILL
