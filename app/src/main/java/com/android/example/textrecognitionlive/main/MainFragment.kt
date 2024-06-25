@@ -1,6 +1,8 @@
 package com.android.example.textrecognitionlive.main
 
 import android.Manifest
+import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Paint
@@ -32,6 +34,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import com.android.example.textrecognitionlive.FallBActivity
 import com.android.example.textrecognitionlive.ImageAnalyzerMet
 import com.android.example.textrecognitionlive.R
 import java.util.concurrent.ExecutionException
@@ -41,6 +44,7 @@ import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
+
 
 class MainFragment : Fragment(){
 
@@ -55,6 +59,9 @@ class MainFragment : Fragment(){
         // request. Where an app has multiple context for requesting permission,
         // this can help differentiate the different contexts
         private const val REQUEST_CODE_PERMISSIONS = 10
+
+        var tokens = arrayListOf<Any>()
+        var labels = arrayListOf <Pair<Any, Any>>()
 
 
         // This is an array of all the permission specified in the manifest
@@ -120,21 +127,19 @@ class MainFragment : Fragment(){
                 Log.i(TAG,"1")
 
                 val startBt = container.findViewById<Button>(R.id.start_button)
+                val fallBt = container.findViewById<Button>(R.id.fallback_button)
+                val confirmBt = container.findViewById<Button>(R.id.confirm_button1)
+
                 //val stopBt = container.findViewById<Button>(R.id.stop_button)
                 //stopBt.isEnabled = false
 
                 startBt.setOnClickListener {
-
-                    //startBt.isEnabled = false
-                    //stopBt.isEnabled = true
-                    //flag = 1
                     if(flag == 1) {
                         flag = 0
                         startBt.apply{
                             text = getString(R.string.stop)
                         }
                         setUpCamera()
-
                     }
                     else if(flag == 0)
                     {
@@ -143,15 +148,43 @@ class MainFragment : Fragment(){
                             text = getString(R.string.start)
                         }
                         stopCamera()
-
                     }
                 }
 
-               /* stopBt.setOnClickListener {
+                fallBt.setOnClickListener {
+                    val intent = Intent(activity, FallBActivity::class.java)
+                    activity?.startActivity(intent)
+                }
+
+                confirmBt.setOnClickListener {
+
                     stopCamera()
-                    startBt.isEnabled = true
-                    stopBt.isEnabled = false
-                }*/
+
+                    startBt.apply{
+                        text = getString(R.string.start)
+                    }
+                    flag = 1
+
+                    val prodInArray = ImageAnalyzerMet.finalProduct.split(" ").toTypedArray()
+                    for(prod in prodInArray)
+                    {
+                        labels.add(Pair(prod, "Product"))
+                    }
+
+                    labels.add(Pair(ImageAnalyzerMet.finalProduct, "Product"))
+                    labels.add(Pair(ImageAnalyzerMet.finalMRP, "MRP"))
+                    labels.add(Pair(ImageAnalyzerMet.finalMFG, "MfgDate"))
+                    labels.add(Pair(ImageAnalyzerMet.finalEXP, "ExpDate"))
+
+                    Log.i(ContentValues.TAG, "labels: $labels")
+                    Log.i(ContentValues.TAG, "tokens: $tokens")
+                }
+
+                /* stopBt.setOnClickListener {
+                     stopCamera()
+                     startBt.isEnabled = true
+                     stopBt.isEnabled = false
+                 }*/
 
                 /*startBt.apply {
                     text = getString(R.string.stop)

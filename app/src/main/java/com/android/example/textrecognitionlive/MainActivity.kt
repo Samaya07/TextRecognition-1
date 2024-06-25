@@ -12,6 +12,7 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
 
     private lateinit var viewBinding: ActivityMainBinding
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -24,8 +25,6 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
         }
 
     }
-
-
 
 }
 

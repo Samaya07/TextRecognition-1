@@ -11,6 +11,7 @@ import androidx.camera.core.ImageProxy
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.MutableLiveData
 import com.android.example.textrecognitionlive.extraction.ExtractionFuns
+import com.android.example.textrecognitionlive.main.MainFragment
 import com.android.example.textrecognitionlive.util.ImageUtils
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.common.MlKitException
@@ -190,11 +191,14 @@ class ImageAnalyzerMet(
     private var arrayOfProds = arrayListOf<ArrayList<Any>>()
     private var maxScore = 0.0
     private var maxMRPScore = 0.0
-    private var finalProduct = String()
-    private var finalMRP = String()
     private var finalResult = String()
-    private var finalMFG = String()
-    private var finalEXP = String()
+    companion object{
+        var finalProduct = String()
+        var finalMRP = String()
+        var finalMFG = String()
+        var finalEXP = String()
+
+    }
 
     init {
         lifecycle.addObserver(detector)
@@ -259,6 +263,16 @@ class ImageAnalyzerMet(
                 // Task completed successfully
                 //result.value = visionText.text
                 //recognizedTextView.text = visionText.text
+                //val b1 = visionText.textBlocks
+                for (block in visionText.textBlocks) {
+                    for (line in block.lines) {
+                        for (element in line.elements) {
+
+                            MainFragment.tokens.add(element.text)
+                        }
+
+                    }
+                }
 
 
                 val productResult = ExtractionFuns.extractProduct(visionText)

@@ -37,10 +37,36 @@
         android:layout_width="100dp"
         android:layout_height="80dp"
         android:layout_marginEnd="240dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="0dp"
         android:layout_marginBottom="150dp"
         android:elevation="2dp"
         android:text="@string/start"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:id="@+id/confirm_button1"
+        android:layout_width="100dp"
+        android:layout_height="80dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="150dp"
+        android:elevation="2dp"
+        android:text="@string/confirm"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:id="@+id/fallback_button"
+        android:layout_width="100dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="240dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="150dp"
+        android:elevation="2dp"
+        android:text="@string/fallback"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"/>
