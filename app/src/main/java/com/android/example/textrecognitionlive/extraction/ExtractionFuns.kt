@@ -69,22 +69,26 @@ object ExtractionFuns {
 
         var mrpadder = 0.4
         val mscoreArr = MutableList(wordsArray.size) { 0.0 }
-
+        var flag = 0
         wordsArray.forEachIndexed { i, word ->
             var mscore = 0.0
             word.toDoubleOrNull()?.let { num ->
                 mscore += 0.05
-                if (num in 2.0..10000.0) mscore += 0.5
-                if (num == 2.0) mscore += 0.3
-                if (num != 9.0 && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0 || (num - 9) % 10 == 0.0)) {
+                //MRP characteristics
+                if (num in 2.0..10000.0) mscore += 0.3
+                if (num != 9.0 && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0 || (num - 9) % 10 == 0.0) || num==2.0) {
                     mscore += 0.3
                 }
+                //Conditions for address and weights
                 if (num == 400.0 && wordsArray.getOrNull(i + 1)?.toDoubleOrNull() != null) mscore -= 0.5
                 if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\b""", RegexOption.IGNORE_CASE))) {
                     mscore -= 0.5
                 }
+                //Condition for line
                 if (mrpLineArray.contains(word)) mscore += 0.5
+                //Condition for years
                 if (num in 2020.0..2030.0) mscore -= 0.1
+                //Condition for block
                 if (blockArray.contains(word)) mscore += 0.3
                 top3MRP.forEach { topMrp ->
                     if (topMrp.toDouble() == num) {
@@ -92,18 +96,24 @@ object ExtractionFuns {
                         mrpadder -= 0.1
                     }
                 }
-                if (word.contains("/-") && i > 1 && word.length>2)
+                //Condition for before being MRP etc and after being /-
+                if(flag==1) mscore += 0.4
+                else if (flag==2) mscore += 0.5
+
+                }
+                if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) } && i < wordsArray.size - 1) {
+                    flag = 1
+                if (word.contains("/-") &&word.length>2)
                     mscore += 1.5
+                if(word=="/-" || word=="|-") flag=2
 
                 mscoreArr[i] = mscore
             }
-
         }
 
         val maxIndex = mscoreArr.indices.maxByOrNull { mscoreArr[it] } ?: -1
         val m1 = wordsArray[maxIndex]
         val m1Score = mscoreArr[maxIndex]
-
         return arrayListOf(m1, m1Score, mscoreArr, top3MRP)
     }
 
@@ -146,15 +156,15 @@ object ExtractionFuns {
             if (word.length >= 3) {
                 score += when {
                     word.uppercase() == word && word.toDoubleOrNull() == null -> 0.2
-                    word.capitalize() == word && word.toDoubleOrNull() == null -> 0.16
+                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() } == word && word.toDoubleOrNull() == null -> 0.16
                     else -> 0.08
                 }
-                if (wordsArray.size > 15) score -= 0.3
+                if (wordsArray.size > 15) score -= 0.4
                 if (wordsArray.size < 5) score += 0.2
                 if (alphabetOnlyPattern.matches(word)) score += 0.15
                 if (specialCharPattern.containsMatchIn(word)) score -= 0.4
                 if (moreThanThreeDigitsPattern.containsMatchIn(word)) score -= 0.4
-                if (i > 0 && wordsArray[i - 1].contains(Regex("\\b(item|product|tem|roduct|ite|produc|roduc|tfm)\\b", RegexOption.IGNORE_CASE))) score += 1
+                if (i > 0 && wordsArray[i - 1].contains(Regex("\\b(item|product|tem|roduct|ite|produc|roduc|tfm|name|genereric|description)\\b", RegexOption.IGNORE_CASE))) score += 1
                 top5Elements.forEachIndexed { index, element ->
                     if (element == word) score += 0.5 - index * 0.1
                 }
