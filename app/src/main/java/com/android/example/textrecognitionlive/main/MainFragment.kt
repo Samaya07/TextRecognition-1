@@ -20,6 +20,7 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.camera.core.AspectRatio
@@ -37,6 +38,8 @@ import androidx.lifecycle.Observer
 import com.android.example.textrecognitionlive.FallBActivity
 import com.android.example.textrecognitionlive.ImageAnalyzerMet
 import com.android.example.textrecognitionlive.R
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -79,6 +82,11 @@ class MainFragment : Fragment(){
     private lateinit var viewFinder: PreviewView
     private lateinit var overlay: SurfaceView
     private lateinit var recognizedTextV: TextView
+
+    private lateinit var progressBar : ProgressBar
+
+    private var db = Firebase.firestore
+
     private var flag = 1
 
     private val imageCropPercentages = MutableLiveData<Pair<Int, Int>>()
@@ -171,10 +179,28 @@ class MainFragment : Fragment(){
                         labels.add(Pair(prod, "Product"))
                     }
 
-                    labels.add(Pair(ImageAnalyzerMet.finalProduct, "Product"))
+                    //labels.add(Pair(ImageAnalyzerMet.finalProduct, "Product"))
                     labels.add(Pair(ImageAnalyzerMet.finalMRP, "MRP"))
                     labels.add(Pair(ImageAnalyzerMet.finalMFG, "MfgDate"))
                     labels.add(Pair(ImageAnalyzerMet.finalEXP, "ExpDate"))
+
+                    tokens = tokens.distinct() as ArrayList<Any>
+
+                    val data = hashMapOf(
+                        "labels" to labels,
+                        "tokens" to tokens
+                    )
+
+                    db.collection("data").add(data)
+                        .addOnSuccessListener {
+                            //Toast.makeText(this, "Successfully added!", Toast.LENGTH_SHORT).show()
+                            labels.clear()
+                            tokens.clear()
+
+                        }
+                        .addOnFailureListener{
+                            //Toast.makeText(this, "Failed!", Toast.LENGTH_SHORT).show()
+                        }
 
                     Log.i(ContentValues.TAG, "labels: $labels")
                     Log.i(ContentValues.TAG, "tokens: $tokens")

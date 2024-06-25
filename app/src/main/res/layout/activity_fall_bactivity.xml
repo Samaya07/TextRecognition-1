@@ -7,14 +7,14 @@
     tools:context=".FallBActivity">
 
 
-
     <EditText
         android:id="@+id/productIn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="2dp"
         android:hint="@string/productName"
-        android:inputType="text"/>
+        android:inputType="text"
+        android:minHeight="48dp" />
 
     <EditText
         android:id="@+id/mrpIn"
@@ -22,7 +22,8 @@
         android:layout_height="wrap_content"
         android:layout_margin="2dp"
         android:hint="@string/mrpValue"
-        android:inputType="text"/>
+        android:inputType="text"
+        android:minHeight="48dp" />
 
     <EditText
         android:id="@+id/mfgIn"
@@ -30,7 +31,8 @@
         android:layout_height="wrap_content"
         android:layout_margin="2dp"
         android:hint="@string/manDate"
-        android:inputType="date"/>
+        android:inputType="text"
+        android:minHeight="48dp" />
 
 
     <!--Button with id showInput-->
@@ -41,7 +43,8 @@
         android:layout_height="wrap_content"
         android:layout_margin="2dp"
         android:hint="@string/expDate"
-        android:inputType="date"/>
+        android:inputType="text"
+        android:minHeight="48dp" />
 
     <Button
         android:id="@+id/confirm_button2"

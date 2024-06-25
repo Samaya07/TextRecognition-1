@@ -9,6 +9,8 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import com.android.example.textrecognitionlive.main.MainFragment
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 
 class FallBActivity : AppCompatActivity() {
 
@@ -16,6 +18,8 @@ class FallBActivity : AppCompatActivity() {
     private lateinit var mrpInput:Editable
     private lateinit var mfgInput:Editable
     private lateinit var expInput:Editable
+
+    private var db = Firebase.firestore
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_fall_bactivity)
@@ -42,10 +46,28 @@ class FallBActivity : AppCompatActivity() {
             MainFragment.labels.add(Pair(mfgInput, "MfgDate"))
             MainFragment.labels.add(Pair(expInput, "ExpDate"))
 
+            MainFragment.tokens = MainFragment.tokens.distinct() as ArrayList<Any>
+
             /*Log.i(TAG, "prodName: $prodInput")
             Log.i(TAG, "mrp: $mrpInput")
             Log.i(TAG, "mfg: $mfgInput")
             Log.i(TAG, "exp: $expInput")*/
+            val data = hashMapOf(
+                "labels" to MainFragment.labels,
+                "tokens" to MainFragment.tokens
+            )
+
+            db.collection("data").add(data)
+                .addOnSuccessListener {
+                    //Toast.makeText(this, "Successfully added!", Toast.LENGTH_SHORT).show()
+                    MainFragment.labels.clear()
+                    MainFragment.tokens.clear()
+
+                }
+                .addOnFailureListener{
+                    //Toast.makeText(this, "Failed!", Toast.LENGTH_SHORT).show()
+                }
+
             Log.i(TAG, "labels: ${MainFragment.labels}")
             Log.i(TAG, "tokens: ${MainFragment.tokens}")
 
