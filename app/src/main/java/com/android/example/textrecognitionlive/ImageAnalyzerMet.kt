@@ -36,7 +36,7 @@ class ImageAnalyzerMet(
     private var arrayOfProds = arrayListOf<ArrayList<Any>>()
     private var maxScore = 0.0
     private var maxMRPScore = 0.0
-    private var maxDateScore = 0.0
+    private var maxDateScore = 0.4
     private var finalProduct = String()
     private var finalMRP = String()
     private var finalResult = String()
@@ -164,30 +164,28 @@ class ImageAnalyzerMet(
 //Date Function
 
                 val dateResult = dates[0].toString()
-                var dScore1 = dates[2].toString().toDouble()
+                val dScore1 = dates[2].toString().toDouble()
                 val dateResult2 = dates[1].toString()
                 val dScore2 = dates[3].toString().toDouble()
-                if(dScore1>=0.4) {
-                    dScore1 = (dScore1 + dScore2) / 2
-                }
-                else {
-                    dScore1 = 0.0
-                }
-                if(dScore1>=maxDateScore){
-                    if(dScore1>0) {
-                        maxDateScore = dScore1
+                val dScoreAvg = (dScore1 + dScore2) / 2
+                if(dScoreAvg>=maxDateScore || dScore1>0.5){
+                    if(dScore2>0.4) {
+                        maxDateScore = dScoreAvg
                         finalMFG = dateResult
                         finalEXP = dateResult2
-                        if (dScore2 == 0.0) {
-                            finalEXP = "Not found"
-                        }
                     }
                     else{
                         maxDateScore = dScore1
-                        finalMFG = "Not found"
+                        finalMFG = dateResult
                         finalEXP = "Not found"
                     }
-                }
+                    }
+//                    else{
+//                        maxDateScore = dScore1
+//                        finalMFG = "Not found"
+//                        finalEXP = "Not found"
+//                    }
+//                }
 //                if(dScore2<=maxEXPScore) {
 //                    maxEXPScore = dScore2
 //                    finalEXP = dates[1].toString()
