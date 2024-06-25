@@ -102,14 +102,13 @@ object ExtractionFuns {
                 }
                 if(flag==1) mscore += 0.4
                 else if (flag==2) mscore += 0.5
-                if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) } && i < wordsArray.size - 1) {
-                    flag = 1
+                if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) }) flag = 1
                 if (word.contains("/-") &&word.length>2)
                     mscore += 1.5
                 if(word=="/-" || word=="|-") flag=2
 
                 mscoreArr[i] = mscore
-            }
+
         }
 
         val maxIndex = mscoreArr.indices.maxByOrNull { mscoreArr[it] } ?: -1
@@ -219,7 +218,8 @@ object ExtractionFuns {
         }
         val scoreArrD = MutableList(wordsArray.size) { 0.0 }
         val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
-        var early = ""
+        var early1 = ""
+        var early2 = ""
         wordsArray.forEachIndexed { i, word ->
             var dScore = 0.0
             val lowerCaseWord = word.lowercase(Locale.getDefault())
@@ -254,25 +254,25 @@ object ExtractionFuns {
             }
             //For emtpy spaced cases
             else {
-
-                if(lowerCaseWord in months){
+                if(lowerCaseWord.equals(months)){
                     if(flag==0){
                         if(i<wordsArray.size - 1) {
-                            early = lowerCaseWord + wordsArray[i + 1]
+                            early1 = lowerCaseWord + wordsArray[i + 1]
+                            flag =1
                         }
                     }
                     else{
                         if(i<wordsArray.size - 1) {
-                            return arrayListOf(early,lowerCaseWord + wordsArray[i+1],3,3)
+                            flag = 2
+                            early2 =lowerCaseWord + wordsArray[i+1]
                         }
                     }
-                    flag =1
                 }
             }
-
             scoreArrD[i] = dScore
         }
-        if(flag==1) return arrayListOf(early,"Not Found",3,3)
+        if(flag==1) return arrayListOf(early1,"Null",0.6,0.6)
+        else if(flag==2) return arrayListOf(early1,early2,0.8,0.8)
         val maxIndex = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
         val m1 = wordsArray[maxIndex]
         val m1Score = scoreArrD[maxIndex]

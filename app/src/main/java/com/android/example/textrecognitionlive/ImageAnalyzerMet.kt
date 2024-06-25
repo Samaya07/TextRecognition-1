@@ -36,7 +36,9 @@ class ImageAnalyzerMet(
     private var arrayOfProds = arrayListOf<ArrayList<Any>>()
     private var maxScore = 0.0
     private var maxMRPScore = 0.0
-    private var maxDateScore = 0.4
+//    private var maxMFGScore = 0.5
+//    private var maxEXPScore = 0.5
+    private var maxDateScore = 0.5
     private var finalProduct = String()
     private var finalMRP = String()
     private var finalResult = String()
@@ -167,15 +169,24 @@ class ImageAnalyzerMet(
                 val dScore1 = dates[2].toString().toDouble()
                 val dateResult2 = dates[1].toString()
                 val dScore2 = dates[3].toString().toDouble()
-                val dScoreAvg = (dScore1 + dScore2) / 2
-                if(dScoreAvg>=maxDateScore || dScore1>0.5){
-                    if(dScore2>0.4) {
+                val dScoreAvg = (dScore1+dScore2) / 2
+//                if(dScore1>maxMFGScore){
+//                    finalMFG = dateResult
+//                    maxMFGScore = dScore1
+//                }
+//                if(dScore2>maxEXPScore){
+//                    finalEXP = dateResult2
+//                    maxEXPScore = dScore2
+//                }
+
+                if(dScoreAvg>=maxDateScore){
+                    if(dScore2>0.5) {
                         maxDateScore = dScoreAvg
                         finalMFG = dateResult
                         finalEXP = dateResult2
                     }
                     else{
-                        maxDateScore = dScore1
+                        maxDateScore = dScoreAvg
                         finalMFG = dateResult
                         finalEXP = "Not found"
                     }
@@ -228,6 +239,7 @@ class ImageAnalyzerMet(
                             "MFG date is: ${finalMFG}\n" +
                             "EXP date is: ${finalEXP}\n"+
                             "Score of Date: ${maxDateScore}\n"+
+                            "Score of exp: ${dScore2}\n\n"+
 
                             "Final prod $finalProduct\n"+
                             "Final MRP $finalMRP\n" +
