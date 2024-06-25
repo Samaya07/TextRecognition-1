@@ -3,4 +3,11 @@
     <string name="stop">Stop</string>
     <string name="start">Start</string>
     <string name="overlay_help">Center text in box</string>
+    <string name="fallback">Fallback</string>
+    <string name="confirm">Confirm</string>
+    <string name="productName">Product Name</string>
+    <string name="mrpValue">MRP</string>
+    <string name="manDate">Manufacture date</string>
+    <string name="expDate">Expiry Date</string>
+
 </resources>
