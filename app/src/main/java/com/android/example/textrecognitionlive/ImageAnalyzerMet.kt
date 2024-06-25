@@ -235,12 +235,10 @@ class ImageAnalyzerMet(
                             "${mrpResult[3]}\n"+
                             "Price Array$mScoreArray\n\n" +
                             "Words Array:$wordsArrayDisplay\n\n" +
-
-                            "MFG date is: ${finalMFG}\n" +
-                            "EXP date is: ${finalEXP}\n"+
                             "Score of Date: ${maxDateScore}\n"+
                             "Score of exp: ${dScore2}\n\n"+
-
+                            "MFG date is: ${finalMFG}\n" +
+                            "EXP date is: ${finalEXP}\n"+
                             "Final prod $finalProduct\n"+
                             "Final MRP $finalMRP\n" +
                             "Prod max score:$maxScore\n"+
