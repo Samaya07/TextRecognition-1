@@ -7,6 +7,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.sqrt
+import java.util.regex.Pattern
+
 
 object ExtractionFuns {
 
@@ -14,6 +16,10 @@ object ExtractionFuns {
     fun extractMrp(text: Text): ArrayList<Any> {
 
         val recognizedText = text.text
+        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+        if (wordsArray.isEmpty()) {
+            return arrayListOf("Not found", 0.0, listOf(0.0), listOf("Not found"))
+        }
         data class SizeMRP(val size: Double, val element: String)
         val sizesMrp = mutableListOf<SizeMRP>()
 
@@ -52,11 +58,9 @@ object ExtractionFuns {
         }
 
         val top3MRP = sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
-        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
 
-        if (wordsArray.isEmpty()) {
-            return arrayListOf("Not found", 0.0, listOf(0.0), listOf("Not found"))
-        }
+
+
 
         val recognizedTextLines = recognizedText.split("\n")
         val blockArray = resBlock.flatMap { it.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() } }
@@ -107,6 +111,10 @@ object ExtractionFuns {
     //PRODUCT FUNCTION EXTRACTION
     fun extractProduct(text: Text): ArrayList<Any> {
         val recognizedText = text.text
+        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        if (wordsArray.isEmpty()) {
+            return arrayListOf("Not found", 0.0, "Not found")
+        }
         data class ElementSize(val size: Double, val element: String)
 
         val elementSizes = mutableListOf<ElementSize>()
@@ -126,11 +134,8 @@ object ExtractionFuns {
         }
 
         val top5Elements = elementSizes.sortedByDescending { it.size }.take(3).map { it.element }
-        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
 
-        if (wordsArray.isEmpty()) {
-            return arrayListOf("Not found", 0.0, "Not found")
-        }
+
 
         val scoreArr = MutableList(wordsArray.size) { 0.0 }
         val specialCharPattern = Regex("[^a-zA-Z0-9]")
@@ -159,7 +164,7 @@ object ExtractionFuns {
         }
 
         val maxIndex = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
-        val max1 = wordsArray.getOrElse(maxIndex) { "Not found" }
+        val max1 = wordsArray.getOrElse(maxIndex) { "No found" }
         val max1Score = scoreArr.getOrElse(maxIndex) { 0.0 }
 
         var finalProd = max1
@@ -177,131 +182,277 @@ object ExtractionFuns {
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
         val finalProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
 
-        if (specialCharPattern.containsMatchIn(finalProd) && finalProdArray.size > 3) {
-            finalProd = "Not found"
+        if (!specialCharPattern.containsMatchIn(finalProd)) {
+            finalProd = "Not fnd"
+        }
+        if(finalProdArray.size > 3){
+            return arrayListOf(max1, max1Score, wordsArrayReturn)
         }
 
         return arrayListOf(finalProd, max1Score, wordsArrayReturn)
     }
 
-    //DATE FUNCTION EXTRACTION
-    fun extractDates(text: String): Pair<String?, String?> {
-        val potentialDates = mutableListOf<String>()
-
-        val dateRegex = Regex(
-            """(?ix)
-        \s*
-        (?:
-          (\d{8}) |        // DDMMYYYY, MMDDYYYY, YYYYMMDD
-          (\d{6})  |
-          (\d{1,2})[/.](\d{1,2})[/.](\d{4}) |  // Format: DD/MM/YYYY, DD.MM.YYYY
-          (\d{1,2})[/.](\d{1,2})[/.](\d{2}) |  // Format: DD/MM/YY, DD.MM.YY
-          (\d{4})[/.](\d{1,2})[/.](\d{1,2}) |  // Format: YYYY/MM/DD, YYYY.MM.DD
-          (\d{1,2})/(\d{4}) |  // Format: MM/YYYY
-          (\d{1,2})/(\d{2}) |  // Format: MM/YY
-          (\d{1,2})-(\d{1,2})-(\d{4}) |  // Format: DD-MM-YYYY
-          (\d{1,2})-(\d{1,2})-(\d{2}) |  // Format: DD-MM-YY
-          (\d{4})-(\d{1,2})-(\d{1,2}) |
-          \d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})|\d{2}\s*[A-Z]{3}\s*\d{2} |
-          (\d{1,2})\s*([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) |  // DD MMM YYYY
-          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) | // MMM YYYY
-          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{2}) | // MMM YY
-          (\d{2}?[/.-]?\s*[A-Za-z]{3,}?[/.-]?\s*\d{2,4})
-        )
-        \s*
-    """.trimMargin()
-        )
-
-        dateRegex.findAll(text).forEach { match ->
-            potentialDates.add(match.value)
-            Log.i(ContentValues.TAG, match.value)
+    fun extractDates(text: Text): ArrayList<Any> {
+        val recognizedText = text.text
+        val wordsArray = recognizedText.split("\\s".toRegex()).filter { it.isNotEmpty() }
+        val months = listOf(
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+            "January", "February", "March", "April", "June", "July", "August", "September", "October", "November", "December"
+        ).map { it.lowercase(Locale.getDefault()) }
+        if (wordsArray.isEmpty()) {
+            return arrayListOf("Not found", "Not found",0.0,0.0)
         }
+        val scoreArrD = MutableList(wordsArray.size) { 0.0 }
+        val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
 
-        if (potentialDates.isEmpty()) {
-            return null to null
-        }
+        wordsArray.forEachIndexed { i, word ->
+            var dScore = 0.0
+            val lowerCaseWord = word.lowercase(Locale.getDefault())
+            val wordSplit = word.split("[/.-]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+            if (word.toDoubleOrNull() == null && !alphabetOnlyPattern.matches(word)) {
+//                if (word.contains("/") || word.contains("-") || word.contains(".")) {
+//                    dScore += 0.5
+//                }
+                val slashCount = word.count { it == '/' }
+                val dashCount = word.count { it == '-' }
+                val dotCount = word.count { it == '.' }
 
-        fun parseDate(dateStr: String): Date? {
-            val formats = listOf(
-                "dd/MM/yyyy", "MM/dd/yyyy", "yyyy/MM/dd",
-                "dd-MM-yyyy", "MM-dd-yyyy", "yyyy-MM-dd",
-                "dd.MM.yyyy", "MM.dd.yyyy", "yyyy.MM.dd",
-                "dd MMM yyyy", "MMM dd yyyy", "yyyy MMM dd",
-                "dd/MM/yy", "MM/dd/yy", "yy/MM/dd",
-                "dd-MM-yy", "MM-dd-yy", "yy-MM-dd",
-                "dd.MM.yy", "MM.dd.yy", "MM/yyyy",
-                "MMM yyyy", "MMM yy", "MM/yy",
-                "ddMMyy", "ddMMyyyy", "MMddyyyy", "MMddyy",
-                "yyyyMMdd", "yyMMdd", "dd-MMM-yyyy", "MMM-yyyy",
-                "MMM-yy", "MMM-yyyy", "MMMyyyy", "MMMyy"
-            ).map { SimpleDateFormat(it, Locale.ENGLISH) }
+                if(slashCount in 1..2) dScore += 0.21 * slashCount
+                else if(dashCount in 1..2) dScore += 0.2 * dashCount
+                else if(dotCount in 1..2) dScore += 0.2 * dotCount
 
-            return formats.asSequence()
-                .mapNotNull { format -> runCatching { format.parse(dateStr) }.getOrNull() }
-                .firstOrNull()
-        }
-
-        fun levenshteinDistance(lhs: String, rhs: String): Int {
-            val lhsLength = lhs.length
-            val rhsLength = rhs.length
-
-            val dp = Array(lhsLength + 1) { IntArray(rhsLength + 1) }
-
-            for (i in 0..lhsLength) dp[i][0] = i
-            for (j in 0..rhsLength) dp[0][j] = j
-
-            for (i in 1..lhsLength) {
-                for (j in 1..rhsLength) {
-                    dp[i][j] = if (lhs[i - 1] == rhs[j - 1]) {
-                        dp[i - 1][j - 1]
-                    } else {
-                        minOf(dp[i - 1][j - 1] + 1, dp[i - 1][j] + 1, dp[i][j - 1] + 1)
+                for(ele in months){
+                    if(ele in lowerCaseWord){
+                        dScore += 0.5
+                    }
+                }
+                for(ele in wordSplit){
+                    if(ele.toDoubleOrNull()!=null){
+                        if(ele.toDouble() in 1.0..12.0){
+                            dScore += 0.2
+                        }
+                        if(ele.toDouble() in 2000.0..2100.0)
+                            dScore += 0.5
                     }
                 }
             }
 
-            return dp[lhsLength][rhsLength]
+            scoreArrD[i] = dScore
         }
+        val maxIndex = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
+        val m1 = wordsArray[maxIndex]
+        val m1Score = scoreArrD[maxIndex]
+        scoreArrD[maxIndex] = 0.0
+        val maxIndex2 = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
+        val m2 = wordsArray[maxIndex2]
+        val m2Score = scoreArrD[maxIndex2]
 
-        val datePatterns = listOf(
-            "dd/MM/yyyy", "MM/dd/yyyy", "yyyy/MM/dd",
-            "dd-MM-yyyy", "MM-dd-yyyy", "yyyy-MM-dd",
-            "dd.MM.yyyy", "MM.dd.yyyy", "yyyy.MM.dd",
-            "dd MMM yyyy", "MMM dd yyyy", "yyyy MMM dd",
-            "dd/MM/yy", "MM/dd/yy", "yy/MM/dd",
-            "dd-MM-yy", "MM-dd-yy", "yy-MM-dd",
-            "dd.MM.yy", "MM.dd.yy", "MM/yyyy",
-            "MMM yyyy", "MMM yy", "MM/yy",
-            "ddMMyy", "ddMMyyyy", "MMddyyyy", "MMddyy",
-            "yyyyMMdd", "yyMMdd", "dd-MMM-yyyy", "MMM-yyyy",
-            "MMM-yy", "MMM-yyyy", "MMMyyyy", "MMMyy"
-        ).map { SimpleDateFormat(it, Locale.ENGLISH) }
-
-        val scoredDates = potentialDates.mapNotNull { dateStr ->
-            parseDate(dateStr)?.let {
-                val normalizedDateStr = dateStr.replace("[^\\d]".toRegex(), "")
-                val scores = datePatterns.map { format ->
-                    val sampleDateStr = format.format(Date())
-                    val sampleDateNormalized = sampleDateStr.replace("[^\\d]".toRegex(), "")
-                    levenshteinDistance(normalizedDateStr, sampleDateNormalized)
-                }
-                dateStr to scores.minOrNull()!!
-            }
-        }.sortedBy { it.second }
-            .map { it.first }
-
-        val manufacturingDate = scoredDates.firstOrNull()
-        var expiryDate = scoredDates.getOrNull(1)
-
-        // Adjust for cases where text indicates expiry explicitly
-        val expiryPattern = Regex("""(?ix)(Best Before|Use Before)""")
-        val lines = text.split("\n")
-
-        expiryDate = lines.find { it.contains(expiryPattern) } ?: expiryDate
-
-        return manufacturingDate to expiryDate
+        return if(maxIndex>maxIndex2)
+            arrayListOf(m1,m2,m1Score,m2Score)
+        else
+            arrayListOf(m2,m1,m2Score,m1Score)
     }
 
+
+    //DATE FUNCTION EXTRACTION
+//    fun extractDates(text: String): Pair<String?, String?> {
+//
+//        val potentialDates = mutableListOf<String>()
+//
+//        val dateRegex = Regex(
+//            """(?ix)
+//        \s*
+//        (?:
+//          (\d{8}) |        // DDMMYYYY, MMDDYYYY, YYYYMMDD
+//          (\d{6})  |
+//          (\d{1,2})[/.](\d{1,2})[/.](\d{4}) |  // Format: DD/MM/YYYY, DD.MM.YYYY
+//          (\d{1,2})[/.](\d{1,2})[/.](\d{2}) |  // Format: DD/MM/YY, DD.MM.YY
+//          (\d{4})[/.](\d{1,2})[/.](\d{1,2}) |  // Format: YYYY/MM/DD, YYYY.MM.DD
+//          (\d{1,2})/(\d{4}) |  // Format: MM/YYYY
+//          (\d{1,2})/(\d{2}) |  // Format: MM/YY
+//          (\d{1,2})-(\d{1,2})-(\d{4}) |  // Format: DD-MM-YYYY
+//          (\d{1,2})-(\d{1,2})-(\d{2}) |  // Format: DD-MM-YY
+//          (\d{4})-(\d{1,2})-(\d{1,2}) |
+//          \d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})|\d{2}\s*[A-Z]{3}\s*\d{2} |
+//          (\d{1,2})\s*([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) |  // DD MMM YYYY
+//          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{4}) | // MMM YYYY
+//          ([Jj]an|[Ff]eb|[Mm]ar|[Aa]pr|[Mm]ay|[Jj]un|[Jj]ul|[Aa]ug|[Ss]ep|[Oo]ct|[Nn]ov|[Dd]ec)(\d{2}) | // MMM YY
+//          (\d{2}?[/.-]?\s*[A-Za-z]{3,}?[/.-]?\s*\d{2,4})
+//        )
+//        \s*
+//    """.trimMargin()
+//        )
+//
+//        dateRegex.findAll(text).forEach { match ->
+//            potentialDates.add(match.value)
+//            Log.i(ContentValues.TAG, match.value)
+//        }
+//
+//        if (potentialDates.isEmpty()) {
+//            return null to null
+//        }
+//
+//        fun parseDate(dateStr: String): Date? {
+//            val formats = listOf(
+//                "dd/MM/yyyy", "MM/dd/yyyy", "yyyy/MM/dd",
+//                "dd-MM-yyyy", "MM-dd-yyyy", "yyyy-MM-dd",
+//                "dd.MM.yyyy", "MM.dd.yyyy", "yyyy.MM.dd",
+//                "dd MMM yyyy", "MMM dd yyyy", "yyyy MMM dd",
+//                "dd/MM/yy", "MM/dd/yy", "yy/MM/dd",
+//                "dd-MM-yy", "MM-dd-yy", "yy-MM-dd",
+//                "dd.MM.yy", "MM.dd.yy", "MM/yyyy",
+//                "MMM yyyy", "MMM yy", "MM/yy",
+//                "ddMMyy", "ddMMyyyy", "MMddyyyy", "MMddyy",
+//                "yyyyMMdd", "yyMMdd", "dd-MMM-yyyy", "MMM-yyyy",
+//                "MMM-yy", "MMM-yyyy", "MMMyyyy", "MMMyy"
+//            ).map { SimpleDateFormat(it, Locale.ENGLISH) }
+//
+//            return formats.asSequence()
+//                .mapNotNull { format -> runCatching { format.parse(dateStr) }.getOrNull() }
+//                .firstOrNull()
+//        }
+//
+//        fun levenshteinDistance(lhs: String, rhs: String): Int {
+//            val lhsLength = lhs.length
+//            val rhsLength = rhs.length
+//
+//            val dp = Array(lhsLength + 1) { IntArray(rhsLength + 1) }
+//
+//            for (i in 0..lhsLength) dp[i][0] = i
+//            for (j in 0..rhsLength) dp[0][j] = j
+//
+//            for (i in 1..lhsLength) {
+//                for (j in 1..rhsLength) {
+//                    dp[i][j] = if (lhs[i - 1] == rhs[j - 1]) {
+//                        dp[i - 1][j - 1]
+//                    } else {
+//                           minOf(dp[i - 1][j - 1] + 1, dp[i - 1][j] + 1, dp[i][j - 1] + 1)
+//                    }
+//                }
+//            }
+//
+//            return dp[lhsLength][rhsLength]
+//        }
+//
+//        val datePatterns = listOf(
+//            "dd/MM/yyyy", "MM/dd/yyyy", "yyyy/MM/dd",
+//            "dd-MM-yyyy", "MM-dd-yyyy", "yyyy-MM-dd",
+//            "dd.MM.yyyy", "MM.dd.yyyy", "yyyy.MM.dd",
+//            "dd MMM yyyy", "MMM dd yyyy", "yyyy MMM dd",
+//            "dd/MM/yy", "MM/dd/yy", "yy/MM/dd",
+//            "dd-MM-yy", "MM-dd-yy", "yy-MM-dd",
+//            "dd.MM.yy", "MM.dd.yy", "MM/yyyy",
+//            "MMM yyyy", "MMM yy", "MM/yy",
+//            "ddMMyy", "ddMMyyyy", "MMddyyyy", "MMddyy",
+//            "yyyyMMdd", "yyMMdd", "dd-MMM-yyyy", "MMM-yyyy",
+//            "MMM-yy", "MMM-yyyy", "MMMyyyy", "MMMyy"
+//        ).map { SimpleDateFormat(it, Locale.ENGLISH) }
+//
+//        val scoredDates = potentialDates.mapNotNull { dateStr ->
+//            parseDate(dateStr)?.let {
+//                val normalizedDateStr = dateStr.replace("[^\\d]".toRegex(), "")
+//                val scores = datePatterns.map { format ->
+//                    val sampleDateStr = format.format(Date())
+//                    val sampleDateNormalized = sampleDateStr.replace("[^\\d]".toRegex(), "")
+//                    levenshteinDistance(normalizedDateStr, sampleDateNormalized)
+//                }
+//                dateStr to scores.minOrNull()!!
+//            }
+//        }.sortedBy { it.second }
+//            .map { it.first }
+//
+//        val manufacturingDate = scoredDates.firstOrNull()
+//        var expiryDate = scoredDates.getOrNull(1)
+//
+//        // Adjust for cases where text indicates expiry explicitly
+//        val expiryPattern = Regex("""(?ix)(Best Before|Use Before)""")
+//        val lines = text.split("\n")
+//
+//        expiryDate = lines.find { it.contains(expiryPattern) } ?: expiryDate
+//
+//        return manufacturingDate to expiryDate
+//    }
+
+
+    //Date trial kapil
+//        fun extractDates(text: String): ArrayList<Any> {
+//        if(text.length < 2){
+//            return arrayListOf("Not found","Not found",10,10)
+//        }
+//
+//        fun levenshteinDistance(s1: CharSequence, s2: CharSequence): Int {
+//            val len1 = s1.length + 1
+//            val len2 = s2.length + 1
+//
+//            var cost = Array(len1) { it }
+//            var newcost = Array(len1) { 0 }
+//
+//            for (j in 1 until len2) {
+//                newcost[0] = j
+//
+//                for (i in 1 until len1) {
+//                    val match = if (s1[i - 1] == s2[j - 1]) 0 else 1
+//
+//                    val costReplace = cost[i - 1] + match
+//                    val costInsert = cost[i] + 1
+//                    val costDelete = newcost[i - 1] + 1
+//
+//                    newcost[i] = minOf(costInsert, costDelete, costReplace)
+//                }
+//
+//                val swap = cost
+//                cost = newcost
+//                newcost = swap
+//            }
+//
+//            return cost[len1 - 1]
+//        }
+//
+//        //Get subStr which are of 2 length
+//        fun extractSubstrings(text: String): List<String> {
+//            val words = text.split("\\s+".toRegex())
+//            val substrings = mutableListOf<String>()
+//
+//            for (i in 0 until words.size - 1) {
+//                val substring = "${words[i]} ${words[i + 1]}"
+//                substrings.add(substring)
+//            }
+//
+//            return substrings
+//        }
+//
+//
+//
+////        val wordsArray = text.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+//
+//        val formats = listOf(
+//            "25/06/2024", "25-06-2024", "25.06.2024",
+//            "25/06/24", "25-06-24", "25.06.24", "06/2024",
+//            "25-Jun-2024","Jun-2024"
+////          "25 Jun 2024","Jun 2024","Jun 24",
+//            //            "Jun-24", "Jun2024", "Jun24,  "06/24","
+//        )
+//
+//
+//        val substrings = extractSubstrings(text)
+//        val distances = substrings.map { substring ->
+//            val minDistance = formats.minOf { format ->
+//                levenshteinDistance(substring, format)
+//            }
+//            substring to minDistance
+//        }.sortedBy { it.second }
+//
+//
+//        val top2 = distances.take(2)
+//        return if(top2.size>=2) {
+//            val (firstMatch, firstDistance) = top2[0]
+//            val (secondMatch, secondDistance) = top2[1]
+//            arrayListOf(firstMatch,secondMatch,firstDistance,secondDistance)
+//        } else{
+//            arrayListOf("NotFound","NotFound",10,10)
+//
+//        }
+//    }
 //    fun extractDates(text: String): Pair<String?, String?> {
 //    val potentialDates = mutableListOf<String>()
 //
