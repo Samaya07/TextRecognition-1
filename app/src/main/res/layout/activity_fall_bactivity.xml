@@ -22,8 +22,8 @@
         android:layout_height="wrap_content"
         android:layout_margin="2dp"
         android:hint="@string/mrpValue"
-        android:inputType="text"
-        android:minHeight="48dp" />
+        android:minHeight="48dp"
+        android:inputType="text"/>
 
     <EditText
         android:id="@+id/mfgIn"
@@ -35,7 +35,6 @@
         android:minHeight="48dp" />
 
 
-    <!--Button with id showInput-->
 
     <EditText
         android:id="@+id/expIn"

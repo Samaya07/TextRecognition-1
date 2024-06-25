@@ -56,6 +56,7 @@ class MainFragment : Fragment(){
         fun newInstance() = MainFragment()
         const val DESIRED_WIDTH_CROP_PERCENT = 8
         const val DESIRED_HEIGHT_CROP_PERCENT = 74
+
         //val viewBinding
 
         // This is an arbitrary number we are using to keep tab of the permission
@@ -82,10 +83,11 @@ class MainFragment : Fragment(){
     private lateinit var viewFinder: PreviewView
     private lateinit var overlay: SurfaceView
     private lateinit var recognizedTextV: TextView
+    var db = Firebase.firestore
 
     private lateinit var progressBar : ProgressBar
 
-    private var db = Firebase.firestore
+
 
     private var flag = 1
 
@@ -141,13 +143,22 @@ class MainFragment : Fragment(){
                 //val stopBt = container.findViewById<Button>(R.id.stop_button)
                 //stopBt.isEnabled = false
 
+                setUpCamera()
+
                 startBt.setOnClickListener {
                     if(flag == 1) {
                         flag = 0
                         startBt.apply{
                             text = getString(R.string.stop)
                         }
-                        setUpCamera()
+                        //setUpCamera()
+                        imageAnalyzer?.setAnalyzer(cameraExecutor, ImageAnalyzerMet(
+                            requireContext(),
+                            lifecycle,
+                            cameraExecutor,
+                            imageCropPercentages,
+                            recognizedTextV
+                        ))
                     }
                     else if(flag == 0)
                     {
@@ -186,6 +197,8 @@ class MainFragment : Fragment(){
 
                     tokens = tokens.distinct() as ArrayList<Any>
 
+
+
                     val data = hashMapOf(
                         "labels" to labels,
                         "tokens" to tokens
@@ -206,18 +219,6 @@ class MainFragment : Fragment(){
                     Log.i(ContentValues.TAG, "tokens: $tokens")
                 }
 
-                /* stopBt.setOnClickListener {
-                     stopCamera()
-                     startBt.isEnabled = true
-                     stopBt.isEnabled = false
-                 }*/
-
-                /*startBt.apply {
-                    text = getString(R.string.stop)
-                }*/
-
-                // Set up the camera and its use cases
-                //setUpCamera()
             }
         } else {
             requestPermissions(REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
@@ -250,17 +251,18 @@ class MainFragment : Fragment(){
         }
     }
 
-
     private fun stopCamera()
     {
-        cameraProvider.unbindAll()
+
+        imageAnalyzer?.clearAnalyzer()
+        //cameraProvider.unbindAll()
+
     }
 
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var cameraSelector: CameraSelector
 
     private fun setUpCamera() {
-        Log.i(TAG,"2")
         val cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
         cameraProviderFuture.addListener(Runnable {
             cameraProvider = try {
@@ -291,17 +293,13 @@ class MainFragment : Fragment(){
 
 
 
-
-
-
-
         imageAnalyzer = ImageAnalysis.Builder()
             // We request aspect ratio but no resolution
             .setTargetAspectRatio(screenAspectRatio)
             .setTargetRotation(rotation)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
-            .also {
+            /*.also {
                 it.setAnalyzer(
                     cameraExecutor, ImageAnalyzerMet(
                         requireContext(),
@@ -311,7 +309,7 @@ class MainFragment : Fragment(){
                         recognizedTextV
                     )
                 )
-            }
+            }*/
 
 
         // Build the image analysis use case and instantiate our analyzer

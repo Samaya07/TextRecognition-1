@@ -60,7 +60,7 @@
 
     <Button
         android:id="@+id/fallback_button"
-        android:layout_width="100dp"
+        android:layout_width="110dp"
         android:layout_height="80dp"
         android:layout_marginStart="240dp"
         android:layout_marginTop="0dp"
