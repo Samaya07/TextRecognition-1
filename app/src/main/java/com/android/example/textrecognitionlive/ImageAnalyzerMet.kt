@@ -322,7 +322,12 @@ class ImageAnalyzerMet(
                 var dScore1 = dates[2].toString().toDouble()
                 val dateResult2 = dates[1].toString()
                 val dScore2 = dates[3].toString().toDouble()
-                dScore1 = (dScore1 + dScore2) / 2
+                if(dScore1>=0.4) {
+                    dScore1 = (dScore1 + dScore2) / 2
+                }
+                else {
+                    dScore1 = 0.0
+                }
                 if(dScore1>=maxDateScore){
                     if(dScore1>0) {
                         maxDateScore = dScore1

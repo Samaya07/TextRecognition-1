@@ -59,13 +59,10 @@ object ExtractionFuns {
 
         val top3MRP = sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
 
-
-
-
         val recognizedTextLines = recognizedText.split("\n")
         val blockArray = resBlock.flatMap { it.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() } }
         val mrpLine = recognizedTextLines.find {
-            it.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.)\b""", RegexOption.IGNORE_CASE))
+            it.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|/-)\b""", RegexOption.IGNORE_CASE))
         } ?: "noneNull"
 
         val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
@@ -74,9 +71,10 @@ object ExtractionFuns {
         val mscoreArr = MutableList(wordsArray.size) { 0.0 }
 
         wordsArray.forEachIndexed { i, word ->
+            var mscore = 0.0
             word.toDoubleOrNull()?.let { num ->
-                var mscore = 0.05
-                if (num in 2.0..5000.0) mscore += 0.5
+                mscore += 0.05
+                if (num in 2.0..10000.0) mscore += 0.5
                 if (num == 2.0) mscore += 0.3
                 if (num != 9.0 && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0 || (num - 9) % 10 == 0.0)) {
                     mscore += 0.3
@@ -85,7 +83,7 @@ object ExtractionFuns {
                 if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\b""", RegexOption.IGNORE_CASE))) {
                     mscore -= 0.5
                 }
-                if (mrpLineArray.contains(word)) mscore += 0.4
+                if (mrpLineArray.contains(word)) mscore += 0.5
                 if (num in 2020.0..2030.0) mscore -= 0.1
                 if (blockArray.contains(word)) mscore += 0.3
                 top3MRP.forEach { topMrp ->
@@ -94,11 +92,12 @@ object ExtractionFuns {
                         mrpadder -= 0.1
                     }
                 }
-                if (word.contains("/-") && i > 1 && wordsArray[i - 1].toDoubleOrNull() != null) {
-                    mscoreArr[i - 1] += 0.8
-                }
+                if (word.contains("/-") && i > 1 && word.length>2)
+                    mscore += 1.5
+
                 mscoreArr[i] = mscore
             }
+
         }
 
         val maxIndex = mscoreArr.indices.maxByOrNull { mscoreArr[it] } ?: -1
@@ -182,8 +181,12 @@ object ExtractionFuns {
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
         val finalProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
 
-        if (!specialCharPattern.containsMatchIn(finalProd)) {
-            finalProd = "Not fnd"
+        if (specialCharPattern.containsMatchIn(finalProd)) {
+            return if(specialCharPattern.containsMatchIn(max1)){
+                arrayListOf("Not found", 0.0, wordsArrayReturn)
+            } else{
+                arrayListOf(max1, max1Score, wordsArrayReturn)
+            }
         }
         if(finalProdArray.size > 3){
             return arrayListOf(max1, max1Score, wordsArrayReturn)
@@ -194,6 +197,7 @@ object ExtractionFuns {
 
     fun extractDates(text: Text): ArrayList<Any> {
         val recognizedText = text.text
+        var flag = 0
         val wordsArray = recognizedText.split("\\s".toRegex()).filter { it.isNotEmpty() }
         val months = listOf(
             "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -204,10 +208,11 @@ object ExtractionFuns {
         }
         val scoreArrD = MutableList(wordsArray.size) { 0.0 }
         val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
-
+        var early = ""
         wordsArray.forEachIndexed { i, word ->
             var dScore = 0.0
             val lowerCaseWord = word.lowercase(Locale.getDefault())
+
             val wordSplit = word.split("[/.-]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
             if (word.toDoubleOrNull() == null && !alphabetOnlyPattern.matches(word)) {
 //                if (word.contains("/") || word.contains("-") || word.contains(".")) {
@@ -217,12 +222,12 @@ object ExtractionFuns {
                 val dashCount = word.count { it == '-' }
                 val dotCount = word.count { it == '.' }
 
-                if(slashCount in 1..2) dScore += 0.21 * slashCount
-                else if(dashCount in 1..2) dScore += 0.2 * dashCount
-                else if(dotCount in 1..2) dScore += 0.2 * dotCount
+                if(slashCount in 1..2) dScore += 0.28 * slashCount
+                else if(dashCount in 1..2) dScore += 0.22 * dashCount
+                else if(dotCount in 1..2) dScore += 0.22 * dotCount
 
                 for(ele in months){
-                    if(ele in lowerCaseWord){
+                    if(lowerCaseWord.contains(ele)){
                         dScore += 0.5
                     }
                 }
@@ -232,13 +237,31 @@ object ExtractionFuns {
                             dScore += 0.2
                         }
                         if(ele.toDouble() in 2000.0..2100.0)
-                            dScore += 0.5
+                            dScore += 0.4
                     }
+                }
+            }
+            //For emtpy spaced cases
+            else {
+
+                if(lowerCaseWord in months){
+                    if(flag==0){
+                        if(i<wordsArray.size - 1) {
+                            early = lowerCaseWord + wordsArray[i + 1]
+                        }
+                    }
+                    else{
+                        if(i<wordsArray.size - 1) {
+                            return arrayListOf(early,lowerCaseWord + wordsArray[i+1],3,3)
+                        }
+                    }
+                    flag =1
                 }
             }
 
             scoreArrD[i] = dScore
         }
+        if(flag==1) return arrayListOf(early,"Not Found",3,3)
         val maxIndex = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
         val m1 = wordsArray[maxIndex]
         val m1Score = scoreArrD[maxIndex]
