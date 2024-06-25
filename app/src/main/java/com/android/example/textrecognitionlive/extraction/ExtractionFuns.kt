@@ -60,12 +60,12 @@ object ExtractionFuns {
         val top3MRP = sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
 
         val recognizedTextLines = recognizedText.split("\n")
-        val blockArray = resBlock.flatMap { it.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() } }
+        val blockArray = resBlock.flatMap { it.split("[\\s:;.-]".toRegex()).filter { it.isNotEmpty() } }
         val mrpLine = recognizedTextLines.find {
             it.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|/-)\b""", RegexOption.IGNORE_CASE))
         } ?: "noneNull"
 
-        val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+        val mrpLineArray = mrpLine.split("[\\s:;.-]".toRegex()).filter { it.isNotEmpty() }
 
         var mrpadder = 0.4
         val mscoreArr = MutableList(wordsArray.size) { 0.0 }
@@ -97,10 +97,11 @@ object ExtractionFuns {
                     }
                 }
                 //Condition for before being MRP etc and after being /-
-                if(flag==1) mscore += 0.4
-                else if (flag==2) mscore += 0.5
+
 
                 }
+                if(flag==1) mscore += 0.4
+                else if (flag==2) mscore += 0.5
                 if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) } && i < wordsArray.size - 1) {
                     flag = 1
                 if (word.contains("/-") &&word.length>2)
