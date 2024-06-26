@@ -11,7 +11,8 @@ object ExtractionFuns {
     fun extractMrp(text: Text): ArrayList<Any> {
 
         val recognizedText = text.text
-        val wordsArray = recognizedText.split("[\\s:;]".toRegex()).filter { it.isNotEmpty() }
+        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+        var flag =0
         if (wordsArray.isEmpty()) {
             return arrayListOf("Not found", 0.0, listOf(0.0), listOf("Not found"))
         }
@@ -54,14 +55,14 @@ object ExtractionFuns {
         val top3MRP = sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
 
         val recognizedTextLines = recognizedText.split("\n")
-        val blockArray = resBlock.split("[\\s:;]".toRegex()).filter { it.isNotEmpty() }
+        val blockArray = resBlock.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
         val mrpLine = recognizedTextLines.find {
-            it.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|/-|incl of taxes|MAP|inc of taxes|incl of tax)\b""", RegexOption.IGNORE_CASE))
+            it.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|/-|incl of taxes|MAP|inc of taxes|incl of tax|p)\b""", RegexOption.IGNORE_CASE))
         } ?: "noneNull"
 
-        val mrpLineArray = mrpLine.split("[\\s:;]".toRegex()).filter { it.isNotEmpty() }
+        val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
 
-        var mrpadder = 0.45
+        var mrpadder = 0.4
         val mscoreArr = MutableList(wordsArray.size) { 0.0 }
         wordsArray.forEachIndexed { i, word ->
             var mscore = 0.0
@@ -72,15 +73,16 @@ object ExtractionFuns {
                 if (num in 2.0..10000.0) mscore += 0.6
 //TEST
                 if (num != 9.0 && (num - 99) % 100 == 0.0 || (num - 9) % 10 == 0.0) {
-                    mscore += 0.45
+                    mscore += 0.35
                 }
                 if(num % 5 == 0.0 || num % 10 == 0.0 ||  num % 100 == 0.0  || num==2.0){
-                    mscore += 0.3
+                    mscore += 0.25
                 }
+                if(num==0.0) mscore -= 3.0
 //End test                //Conditions for address and weights
                 if (num == 400.0 && wordsArray.getOrNull(i + 1)?.toDoubleOrNull() != null) mscore -= 0.5
                 if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\b""", RegexOption.IGNORE_CASE))) {
-                    mscore -= 0.5
+                    mscore -= 0.8
                 }
                 //Condition for line
                 if (mrpLineArray.contains(word)) mscore += 0.5
@@ -95,12 +97,13 @@ object ExtractionFuns {
                     }
                 }
                 if( i<wordsArray.size - 1 &&(wordsArray[i+1]=="/-" || wordsArray[i+1]=="|-"))
-                    mscore += 200.0
-                //Condition for before being MRP etc and after being /-
+                    mscore += 0.5
+
+                if (flag==1) mscore += 0.6
             }
 //                if(flag==1) mscore += 0.4
-//                else if (flag==2) mscore += 0.5
-//                if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) }) flag = 1
+
+                if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) }) flag = 1
 //TEST
             if (word.contains("/-")) {
                 val wordSplitTemp = word.split("/".toRegex()).filter { it.isNotEmpty() }

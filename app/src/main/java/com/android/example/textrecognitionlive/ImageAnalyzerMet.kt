@@ -244,13 +244,14 @@ class ImageAnalyzerMet(
                             "Price Array$mScoreArray\n\n" +
                             "Words Array:$wordsArrayDisplay\n\n" +
                             "Score of Date: ${maxDateScore}\n"+
-                            "Score of exp: ${dScore2}\n\n"+
+                            "Score of exp: ${dScore2}\n"+
+                            "Prod max score:$maxScore\n"+
+                            "MRP max score: $maxMRPScore\n\n"+
                             "MFG date is: ${finalMFG}\n" +
                             "EXP date is: ${finalEXP}\n"+
                             "Final prod $finalProduct\n"+
-                            "Final MRP $finalMRP\n" +
-                            "Prod max score:$maxScore\n"+
-                            "MRP max score: $maxMRPScore"
+                            "Final MRP $finalMRP\n"
+
 
                 recognizedTextView.text = finalResult
 
