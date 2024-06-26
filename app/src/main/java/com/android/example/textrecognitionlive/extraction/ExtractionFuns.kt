@@ -28,8 +28,7 @@ object ExtractionFuns {
                     val elementText = element.text
 
                     // Check for date and MRP related keywords
-                    if (
-                        resBlock == "" &&
+                    if (resBlock == "" &&
                         elementText.contains("Rs.", ignoreCase = true) ||
                         elementText.contains("MRP", ignoreCase = true) ||
                         elementText.contains("₹") ||
@@ -73,21 +72,21 @@ object ExtractionFuns {
                 if (num in 2.0..10000.0) mscore += 0.6
 //TEST
                 if (num != 9.0 && (num - 99) % 100 == 0.0 || (num - 9) % 10 == 0.0) {
-                    mscore += 0.35
+                    mscore += 0.3
                 }
                 if(num % 5 == 0.0 || num % 10 == 0.0 ||  num % 100 == 0.0  || num==2.0){
                     mscore += 0.25
                 }
                 if(num==0.0) mscore -= 3.0
 //End test                //Conditions for address and weights
-                if (num == 400.0 && wordsArray.getOrNull(i + 1)?.toDoubleOrNull() != null) mscore -= 0.5
+                if (num == 400.0 && wordsArray.getOrNull(i + 1)?.toDoubleOrNull() != null) mscore -= 0.8
                 if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\b""", RegexOption.IGNORE_CASE))) {
                     mscore -= 0.8
                 }
                 //Condition for line
                 if (mrpLineArray.contains(word)) mscore += 0.5
                 //Condition for years
-                if (num in 2020.0..2030.0) mscore -= 0.1
+                if (num in 2020.0..2030.0) mscore -= 0.3
                 //Condition for block
                 if (blockArray.contains(word)) mscore += 0.3
                 top3MRP.forEach { topMrp ->
@@ -315,7 +314,98 @@ object ExtractionFuns {
             arrayListOf(m2,m1,m2Score,m1Score)
     }
 
-
+//    fun extractMrp(text: Text): ArrayList<Any> {
+//
+//        val recognizedText = text.text
+//        data class SizeMRP(val size: Double, val element: String)
+//        val sizesMrp = mutableListOf<SizeMRP>()
+//
+//        // Extract date and MRP related block
+//        val dateRegex = """\b\d{2}\s*[/.\s]\s*\d{2}\s*[/.\s]\s*(?:\d{2}|\d{4})\b|\b\d{2}\s*[A-Z]{3}\s*\d{2}\b""".toRegex()
+//        val resBlock = mutableListOf<String>()
+//
+//        for (block in text.textBlocks) {
+//            for (line in block.lines) {
+//                for (element in line.elements) {
+//                    val elementText = element.text
+//
+//                    // Check for date and MRP related keywords
+//                    if (dateRegex.containsMatchIn(elementText) ||
+//                        elementText.contains("Rs.", ignoreCase = true) ||
+//                        elementText.contains("MRP", ignoreCase = true) ||
+//                        elementText.contains("₹") ||
+//                        elementText.contains("M.R.P", ignoreCase = true) ||
+//                        elementText.contains("Rs", ignoreCase = true)) {
+//
+//                        resBlock.add(block.text)
+//                    }
+//
+//                    // Check for numeric values
+//                    if (elementText.matches(Regex("\\d+(\\.\\d+)?"))) {
+//                        val cornersM = element.cornerPoints
+//                        val sizeM = if (cornersM != null && cornersM.size == 4) {
+//                            val dx1 = (cornersM[0].x - cornersM[3].x).toDouble()
+//                            val dy1 = (cornersM[0].y - cornersM[3].y).toDouble()
+//                            sqrt(dx1 * dx1 + dy1 * dy1)
+//                        } else 0.0
+//                        sizesMrp.add(SizeMRP(sizeM, element.text))
+//                    }
+//                }
+//            }
+//        }
+//
+//        val top3MRP = sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
+//        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+//
+//        if (wordsArray.isEmpty()) {
+//            return arrayListOf("Not found", 0.0, listOf(0.0), listOf("Not found"))
+//        }
+//
+//        val recognizedTextLines = recognizedText.split("\n")
+//        val blockArray = resBlock.flatMap { it.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() } }
+//        val mrpLine = recognizedTextLines.find {
+//            it.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.)\b""", RegexOption.IGNORE_CASE))
+//        } ?: "noneNull"
+//
+//        val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+//
+//        var mrpadder = 0.4
+//        val mscoreArr = MutableList(wordsArray.size) { 0.0 }
+//
+//        wordsArray.forEachIndexed { i, word ->
+//            word.toDoubleOrNull()?.let { num ->
+//                var mscore = 0.05
+//                if (num in 2.0..5000.0) mscore += 0.5
+//                if (num == 2.0) mscore += 0.3
+//                if (num != 9.0 && (num % 5 == 0.0 || num % 10 == 0.0 || (num - 99) % 100 == 0.0 || num % 100 == 0.0 || (num - 9) % 10 == 0.0)) {
+//                    mscore += 0.3
+//                }
+//                if (num == 400.0 && wordsArray.getOrNull(i + 1)?.toDoubleOrNull() != null) mscore -= 0.5
+//                if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\b""", RegexOption.IGNORE_CASE))) {
+//                    mscore -= 0.5
+//                }
+//                if (mrpLineArray.contains(word)) mscore += 0.4
+//                if (num in 2020.0..2030.0) mscore -= 0.1
+//                if (blockArray.contains(word)) mscore += 0.3
+//                top3MRP.forEach { topMrp ->
+//                    if (topMrp.toDouble() == num) {
+//                        mscore += mrpadder
+//                        mrpadder -= 0.1
+//                    }
+//                }
+//                if (word.contains("/-") && i > 1 && wordsArray[i - 1].toDoubleOrNull() != null) {
+//                    mscoreArr[i - 1] += 0.8
+//                }
+//                mscoreArr[i] = mscore
+//            }
+//        }
+//
+//        val maxIndex = mscoreArr.indices.maxByOrNull { mscoreArr[it] } ?: -1
+//        val m1 = wordsArray[maxIndex]
+//        val m1Score = mscoreArr[maxIndex]
+//
+//        return arrayListOf(m1, m1Score, mscoreArr, top3MRP)
+//    }
     //DATE FUNCTION EXTRACTION
 //    fun extractDates(text: String): Pair<String?, String?> {
 //
