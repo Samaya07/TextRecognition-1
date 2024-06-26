@@ -138,7 +138,7 @@ class ImageAnalyzerMet(
                 val dScore1 = dates[2].toString().toDouble()
                 val dateResult2 = dates[1].toString()
                 val dScore2 = dates[3].toString().toDouble()
-                val dScoreAvg = (dScore1+dScore2) / 2
+                val dScoreAvg = (dScore1+dScore2)/2
 //                if(dScore1>maxMFGScore){
 //                    finalMFG = dateResult
 //                    maxMFGScore = dScore1

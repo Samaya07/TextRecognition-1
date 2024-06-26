@@ -238,7 +238,7 @@ object ExtractionFuns {
     fun extractDates(text: Text): ArrayList<Any> {
         val recognizedText = text.text
         var flag = 0
-        val wordsArray = recognizedText.split("\\s:".toRegex()).filter { it.isNotEmpty() }
+        val wordsArray = recognizedText.split("[\\s:]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         val months = listOf(
             "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
             "January", "February", "March", "April", "June", "July", "August", "September", "October", "November", "December"
@@ -302,8 +302,7 @@ object ExtractionFuns {
             scoreArrD[i] = dScore
         }
         if(flag==1) return arrayListOf(early1.capitalize(Locale.ROOT),"Null",0.7,0.7)
-        else if(flag==2) return arrayListOf(early1.capitalize(Locale.ROOT),
-            early2.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },0.9,0.9)
+        else if(flag==2) return arrayListOf(early1.capitalize(Locale.ROOT),early2.capitalize(Locale.ROOT),0.9,0.9)
         val maxIndex = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
         val m1 = wordsArray[maxIndex]
         val m1Score = scoreArrD[maxIndex]
