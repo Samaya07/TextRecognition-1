@@ -309,7 +309,7 @@ object ExtractionFuns {
         val m2 = wordsArray[maxIndex2]
         val m2Score = scoreArrD[maxIndex2]
 
-        return if(maxIndex>maxIndex2)
+        return if(maxIndex<maxIndex2)
             arrayListOf(m1,m2,m1Score,m2Score)
         else
             arrayListOf(m2,m1,m2Score,m1Score)
