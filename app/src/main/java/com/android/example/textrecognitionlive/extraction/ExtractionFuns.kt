@@ -1,13 +1,8 @@
 package com.android.example.textrecognitionlive.extraction
 
-import android.content.ContentValues
-import android.util.Log
 import com.google.mlkit.vision.text.Text
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import kotlin.math.sqrt
-import java.util.regex.Pattern
 
 
 object ExtractionFuns {
@@ -102,20 +97,20 @@ object ExtractionFuns {
                 if( i<wordsArray.size - 1 &&(wordsArray[i+1]=="/-" || wordsArray[i+1]=="|-"))
                     mscore += 200.0
                 //Condition for before being MRP etc and after being /-
-                }
+            }
 //                if(flag==1) mscore += 0.4
 //                else if (flag==2) mscore += 0.5
 //                if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) }) flag = 1
 //TEST
-                if (word.contains("/-")) {
-                    val wordSplitTemp = word.split("/".toRegex()).filter { it.isNotEmpty() }
-                    if(wordSplitTemp[0].toDoubleOrNull()!=null)
-                        mscore += 2.5
-                }
+            if (word.contains("/-")) {
+                val wordSplitTemp = word.split("/".toRegex()).filter { it.isNotEmpty() }
+                if(wordSplitTemp[0].toDoubleOrNull()!=null)
+                    mscore += 2.5
+            }
 
 //END TEST                if(word=="/-" || word=="|-") flag=2
 
-                mscoreArr[i] = mscore
+            mscoreArr[i] = mscore
 
         }
 
@@ -203,7 +198,7 @@ object ExtractionFuns {
             finalProd = "$max1 $max2"
             return arrayListOf(finalProd, max1Score, wordsArrayReturn)
         }
-            //Needs testing
+        //Needs testing
         var checker = 0
         for (block in text.textBlocks) {
             for (line in block.lines) {

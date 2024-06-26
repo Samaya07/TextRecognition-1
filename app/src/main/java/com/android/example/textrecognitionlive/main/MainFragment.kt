@@ -81,7 +81,7 @@ class MainFragment : Fragment(){
     private lateinit var viewFinder: PreviewView
     private lateinit var overlay: SurfaceView
     private lateinit var recognizedTextV: TextView
-    var db = Firebase.firestore
+    private var db = Firebase.firestore
 
 
     private var flag = 1

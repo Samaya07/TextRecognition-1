@@ -36,10 +36,10 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
                 .commitNow()
         }
 
-        //downloadAndUpdateModel(this)
+        downloadAndUpdateModel(this)
 
         // Start continuous model update every 3 days
-        // startContinuousModelUpdate(this)
+        startContinuousModelUpdate(this)
 
     }
 
@@ -81,7 +81,6 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
             }
     }
 }
-
 
 
 
