@@ -20,7 +20,6 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.camera.core.AspectRatio
@@ -57,7 +56,6 @@ class MainFragment : Fragment(){
         const val DESIRED_WIDTH_CROP_PERCENT = 8
         const val DESIRED_HEIGHT_CROP_PERCENT = 74
 
-        //val viewBinding
 
         // This is an arbitrary number we are using to keep tab of the permission
         // request. Where an app has multiple context for requesting permission,
@@ -84,9 +82,6 @@ class MainFragment : Fragment(){
     private lateinit var overlay: SurfaceView
     private lateinit var recognizedTextV: TextView
     var db = Firebase.firestore
-
-    private lateinit var progressBar : ProgressBar
-
 
 
     private var flag = 1
@@ -134,7 +129,6 @@ class MainFragment : Fragment(){
             viewFinder.post {
                 // Keep track of the display in which this view is attached
                 displayId = viewFinder.display.displayId
-                Log.i(TAG,"1")
 
                 val startBt = container.findViewById<Button>(R.id.start_button)
                 val fallBt = container.findViewById<Button>(R.id.fallback_button)
@@ -277,7 +271,6 @@ class MainFragment : Fragment(){
 
     private fun bindCameraUseCases(cameraProvider: ProcessCameraProvider) {
         // Get screen metrics used to setup camera for full screen resolution
-        Log.i(TAG,"3")
         val metrics = DisplayMetrics().also { viewFinder.display.getRealMetrics(it) }
         Log.d(TAG, "Screen metrics: ${metrics.widthPixels} x ${metrics.heightPixels}")
 
@@ -314,7 +307,6 @@ class MainFragment : Fragment(){
 
         // Build the image analysis use case and instantiate our analyzer
 
-        Log.i(TAG,"4")
         imageCropPercentages.observe(viewLifecycleOwner,
             Observer { drawOverlay(overlay.holder, it.first, it.second) })
 
@@ -331,7 +323,6 @@ class MainFragment : Fragment(){
                 this, cameraSelector, preview, imageAnalyzer
             )
             preview.setSurfaceProvider(viewFinder.surfaceProvider)
-            Log.i(TAG,"5")
         } catch (exc: IllegalStateException) {
             Log.e(TAG, "Use case binding failed. This must be running on main thread.", exc)
         }
@@ -345,7 +336,6 @@ class MainFragment : Fragment(){
         widthCropPercent: Int
     ) {
         val canvas = holder.lockCanvas()
-        Log.i(TAG,"drawover")
         /*val bgPaint = Paint().apply {
             alpha = 140
         }

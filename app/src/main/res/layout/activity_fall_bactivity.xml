@@ -23,7 +23,7 @@
         android:layout_margin="2dp"
         android:hint="@string/mrpValue"
         android:minHeight="48dp"
-        android:inputType="text"/>
+        android:inputType="text" />
 
     <EditText
         android:id="@+id/mfgIn"

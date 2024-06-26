@@ -65,8 +65,8 @@ class FallBActivity : AppCompatActivity() {
                     //Toast.makeText(this, "Failed!", Toast.LENGTH_SHORT).show()
                 }
 
-            Log.i(TAG, "labelsfallb: ${MainFragment.labels}")
-            Log.i(TAG, "tokensfallb: ${MainFragment.tokens}")
+            Log.i(TAG, "labelsFallB: ${MainFragment.labels}")
+            Log.i(TAG, "tokensFallB: ${MainFragment.tokens}")
 
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
