@@ -233,7 +233,7 @@ object ExtractionFuns {
     fun extractDates(text: Text): ArrayList<Any> {
         val recognizedText = text.text
         var flag = 0
-        val wordsArray = recognizedText.split("[\\s:]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        val wordsArray = recognizedText.split("[\\s:,]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         val months = listOf(
             "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
             "January", "February", "March", "April", "June", "July", "August", "September", "October", "November", "December"

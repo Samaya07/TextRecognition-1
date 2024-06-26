@@ -42,6 +42,8 @@ class ImageAnalyzerMet(
     private var finalProduct = String()
     private var finalMRP = String()
     private var finalResult = String()
+    private var finalMFG = String()
+    private var finalEXP = String()
     companion object{
         var finalProduct = String()
         var finalMRP = String()
