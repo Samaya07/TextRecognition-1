@@ -132,13 +132,46 @@ class ImageAnalyzerMet(
 
                 val recognizedText = visionText.text
 
+
+//Date Function
+                val dateResult = dates[0].toString()
+                val dScore1 = dates[2].toString().toDouble()
+                val dateResult2 = dates[1].toString()
+                val dScore2 = dates[3].toString().toDouble()
+                val dScoreAvg = (dScore1+dScore2) / 2
+//                if(dScore1>maxMFGScore){
+//                    finalMFG = dateResult
+//                    maxMFGScore = dScore1
+//                }
+//                if(dScore2>maxEXPScore){
+//                    finalEXP = dateResult2
+//                    maxEXPScore = dScore2
+//                }
+
+//TEST thershold
+                if(dScoreAvg>=maxDateScore){
+                    if(dScore2>=0.4) {
+                        maxDateScore = dScoreAvg
+                        finalMFG = dateResult
+                        finalEXP = dateResult2
+                    }
+                    else{
+                        maxDateScore = dScoreAvg
+                        finalMFG = dateResult
+                        finalEXP = "Not found"
+                    }
+                }
+
                 //Picking max score product
-                val pScore = productResult[1].toString().toDouble()
+                var pScore = productResult[1].toString().toDouble()
                 val mScore = mrpResult[1].toString().toDouble()
                 val wordsArrayDisplay = productResult[2]
                 val mScoreArray = mrpResult[2]
 
 //Picking Final Product
+//TEST
+                //date and prod relation condition
+                if(maxDateScore>=0.5) pScore -= 0.4
                 if(pScore>maxScore){
                     finalProduct = productResult[0].toString()
                     maxScore = pScore
@@ -163,34 +196,7 @@ class ImageAnalyzerMet(
 
                 }
 
-//Date Function
 
-                val dateResult = dates[0].toString()
-                val dScore1 = dates[2].toString().toDouble()
-                val dateResult2 = dates[1].toString()
-                val dScore2 = dates[3].toString().toDouble()
-                val dScoreAvg = (dScore1+dScore2) / 2
-//                if(dScore1>maxMFGScore){
-//                    finalMFG = dateResult
-//                    maxMFGScore = dScore1
-//                }
-//                if(dScore2>maxEXPScore){
-//                    finalEXP = dateResult2
-//                    maxEXPScore = dScore2
-//                }
-
-                if(dScoreAvg>=maxDateScore){
-                    if(dScore2>=0.35) {
-                        maxDateScore = dScoreAvg
-                        finalMFG = dateResult
-                        finalEXP = dateResult2
-                    }
-                    else{
-                        maxDateScore = dScoreAvg
-                        finalMFG = dateResult
-                        finalEXP = "Not found"
-                    }
-                    }
 //                    else{
 //                        maxDateScore = dScore1
 //                        finalMFG = "Not found"
@@ -230,7 +236,7 @@ class ImageAnalyzerMet(
                 finalResult =
                     "Max product: ${productResult[0]}\n\n" +
                             "Score Prod: $pScore\n\n"+
-                            "Price:$finalMRP\n" +
+                            "Price:${mrpResult[0]}\n" +
                             "MRP Score:$mScore\n" +
                             "${mrpResult[3]}\n"+
                             "Price Array$mScoreArray\n\n" +
