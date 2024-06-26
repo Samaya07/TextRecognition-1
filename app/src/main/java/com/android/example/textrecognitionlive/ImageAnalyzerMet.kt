@@ -38,7 +38,7 @@ class ImageAnalyzerMet(
     private var maxMRPScore = 0.0
 //    private var maxMFGScore = 0.5
 //    private var maxEXPScore = 0.5
-    private var maxDateScore = 0.5
+    private var maxDateScore = 0.4
     private var finalProduct = String()
     private var finalMRP = String()
     private var finalResult = String()
@@ -180,7 +180,7 @@ class ImageAnalyzerMet(
 //                }
 
                 if(dScoreAvg>=maxDateScore){
-                    if(dScore2>0.5) {
+                    if(dScore2>=0.35) {
                         maxDateScore = dScoreAvg
                         finalMFG = dateResult
                         finalEXP = dateResult2

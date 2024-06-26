@@ -175,20 +175,35 @@ object ExtractionFuns {
         val maxIndex = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
         val max1 = wordsArray.getOrElse(maxIndex) { "No found" }
         val max1Score = scoreArr.getOrElse(maxIndex) { 0.0 }
+        scoreArr[maxIndex] = 0.0
+        val maxIndex2 = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
+        val max2 = wordsArray.getOrElse(maxIndex2) { "No found" }
+//        scoreArr[maxIndex2] = 0.0
+//        val maxIndex3 = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
+//        val max3 = wordsArray.getOrElse(maxIndex3) { "No found" }
 
+        val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
         var finalProd = max1
+        if(maxIndex2-maxIndex==1) {
+            finalProd = "$max1 $max2"
+            return arrayListOf(finalProd, max1Score, wordsArrayReturn)
+        }
+            //Needs testing
+        var checker = 0
         for (block in text.textBlocks) {
             for (line in block.lines) {
                 for (element in line.elements) {
                     if (max1 == element.text) {
                         finalProd = block.text
+                        checker = 1
                         break
                     }
                 }
+                if(checker==1) break
             }
+            if (checker==1) break
         }
 
-        val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
         val finalProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
 
         if (specialCharPattern.containsMatchIn(finalProd)) {
