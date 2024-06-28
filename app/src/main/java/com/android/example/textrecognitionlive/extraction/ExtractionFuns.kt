@@ -127,6 +127,7 @@ object ExtractionFuns {
         val recognizedText = text.text
         val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+        var lineOfProd = ""
         if (wordsArray.isEmpty()) {
             return arrayListOf("Not found", 0.0, "Not found")
         }
@@ -144,9 +145,8 @@ object ExtractionFuns {
                         sqrt(dx1 * dx1 + dy1 * dy1)
                     } else 0.0
                     elementSizes.add(ElementSize(size, element.text))
-//TEST
-                    if (element.text.contains(Regex("\\b(item|model name|product name|product|tem|roduct|ite|produc|roduc|tfm|name|genereric name|generic|description|model)\\b", RegexOption.IGNORE_CASE)))
-                        return arrayListOf(line.text, 10, wordsArrayReturn)
+                    if (element.text.contains(Regex("\\b(item|model name|product name|product|tem|roduct|ite|produc|roduc|tfm|name|genereric name|generic|description|model|content|contents)\\b", RegexOption.IGNORE_CASE)))
+                        lineOfProd = line.text
 
                 }
             }
@@ -175,8 +175,8 @@ object ExtractionFuns {
                 if (specialCharPattern.containsMatchIn(word)) score -= 0.4
                 if (moreThanThreeDigitsPattern.containsMatchIn(word)) score -= 0.4
 //TEST
-//                if (i > 0 && wordsArray[i - 1].contains(Regex("\\b(item|model name|product name|product|tem|roduct|ite|produc|roduc|tfm|name|genereric name|generic|description|model)\\b", RegexOption.IGNORE_CASE)))
-//                    return arrayListOf(finalProd, max1Score, wordsArrayReturn)
+                if(word in lineOfProd) score += 0.7
+
                 top5Elements.forEachIndexed { index, element ->
                     if (element == word) score += 0.5 - index * 0.1
                 }
@@ -190,9 +190,6 @@ object ExtractionFuns {
         scoreArr[maxIndex] = 0.0
         val maxIndex2 = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
         val max2 = wordsArray.getOrElse(maxIndex2) { "No found" }
-//        scoreArr[maxIndex2] = 0.0
-//        val maxIndex3 = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
-//        val max3 = wordsArray.getOrElse(maxIndex3) { "No found" }
 
 
         var finalProd = max1
@@ -200,7 +197,6 @@ object ExtractionFuns {
             finalProd = "$max1 $max2"
             return arrayListOf(finalProd, max1Score, wordsArrayReturn)
         }
-        //Needs testing
         var checker = 0
         for (block in text.textBlocks) {
             for (line in block.lines) {
