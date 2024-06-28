@@ -35,7 +35,7 @@ class ImageAnalyzerMet(
     private val detector =
         TextRecognition.getClient(TextRecognizerOptions.Builder().setExecutor(executor).build())
     private val devanagiriDetector = TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
-    private val rupeeLine = arrayListOf <Any>()
+    private var rupeeLine = arrayListOf <Any>()
 
 //    private val detect3 = TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
 
@@ -135,25 +135,37 @@ class ImageAnalyzerMet(
 
                 devanagiriDetector.process(image)
                     .addOnSuccessListener { hindiText ->
-
-                        for(block in hindiText.textBlocks)
-                        {
-                            for(line in block.lines)
-                            {
+                        var rupee = ""
+                        for (block in hindiText.textBlocks) {
+                            for (line in block.lines) {
                                 /*if(line.text.contains("\u20B9"))
                                 {
                                     rupeeLine.add(line.text)
                                 }*/
-                                for(element in line.elements)
-                                {
-                                    if(element.text.contains("\u20B9"))
-                                    {
-                                        rupeeLine.add(element.text)
-
+                                for ((i, element) in line.elements.withIndex()) {
+                                    if (element.text.contains("\u20B9")) {
+                                        var index = i
+                                        if (element.text.length > 1) {
+                                            rupee += element.text.replace("\u20B9", "")
+                                        } else {
+                                            // Check if there is a next element
+                                            if (i + 1 < line.elements.size) {
+                                                rupee += line.elements[i + 1].text
+                                            } else {
+                                                continue
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
+                        val filteredRupee = rupee.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+                        for (each in filteredRupee)
+                        {
+                            each.toDoubleOrNull()?.let { rupeeLine.add(it) }
+                        }
+                            //rupeeLine = rupee.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+
                         //Toast.makeText(context, "$rupeeLine", Toast.LENGTH_SHORT).show()
 
                     }

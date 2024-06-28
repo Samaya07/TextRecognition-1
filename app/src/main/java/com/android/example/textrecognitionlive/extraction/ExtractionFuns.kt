@@ -71,6 +71,10 @@ object ExtractionFuns {
                 //MRP characteristics
 //increased to 0.6, test
                 if (num in 2.0..10000.0) mscore += 0.6
+
+                if (num in rupeeLine) mscore += 100.0
+
+                if (word.substring(1).toDouble() in rupeeLine) mscore += 200.0
 //TEST
                 if (num != 9.0 && (num - 99) % 100 == 0.0 || (num - 9) % 10 == 0.0) {
                     mscore += 0.3

@@ -77,6 +77,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx:25.0.0")
     implementation("com.google.firebase:firebase-storage:21.0.0")
     implementation("org.tensorflow:tensorflow-lite:2.7.0")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.0")
     annotationProcessor("androidx.room:room-compiler:2.6.1")
     implementation("com.google.firebase:firebase-ml-modeldownloader-ktx:25.0.0")
     testImplementation("junit:junit:4.13.2")
