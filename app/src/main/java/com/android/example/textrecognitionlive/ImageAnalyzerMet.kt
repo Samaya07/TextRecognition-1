@@ -18,8 +18,10 @@ import com.google.mlkit.common.MlKitException
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.util.concurrent.Executor
+import kotlin.time.TimeSource
 
 
 class ImageAnalyzerMet(
@@ -27,34 +29,45 @@ class ImageAnalyzerMet(
     lifecycle: Lifecycle,
     executor: Executor,
     private val imageCropPercentages: MutableLiveData<Pair<Int, Int>>,
-    private val recognizedTextView: TextView
+    private val recognizedTextView: TextView,
+    private val mark2: TimeSource.Monotonic.ValueTimeMark
 ) : ImageAnalysis.Analyzer {
     private val detector =
         TextRecognition.getClient(TextRecognizerOptions.Builder().setExecutor(executor).build())
+    private val devanagiriDetector = TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
+    private val rupeeLine = arrayListOf <Any>()
+
+//    private val detect3 = TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
+
 
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
     private var arrayOfProds = arrayListOf<ArrayList<Any>>()
     private var maxScore = 0.0
     private var maxMRPScore = 0.0
-//    private var maxMFGScore = 0.5
+    private var toastFlag = true
+
+    //    private var maxMFGScore = 0.5
 //    private var maxEXPScore = 0.5
     private var maxDateScore = 0.4
+    private var finalResult = String()
     private var finalProduct = String()
     private var finalMRP = String()
-    private var finalResult = String()
     private var finalMFG = String()
     private var finalEXP = String()
-    companion object{
+
+    companion object {
         var finalProduct = String()
+        var finalProdDisplay = String()
         var finalMRP = String()
         var finalMFG = String()
         var finalEXP = String()
-
     }
 
     init {
         lifecycle.addObserver(detector)
     }
+
 
     @androidx.camera.core.ExperimentalGetImage
     override fun analyze(imageProxy: ImageProxy) {
@@ -110,25 +123,54 @@ class ImageAnalyzerMet(
         image: InputImage
     ): Task<Text> {
         // Pass image to an ML Kit Vision API
+
+        //detect2.process()
         return detector.process(image)
             .addOnSuccessListener { visionText ->
                 // Task completed successfully
                 //result.value = visionText.text
                 //recognizedTextView.text = visionText.text
                 //val b1 = visionText.textBlocks
+
+
+                devanagiriDetector.process(image)
+                    .addOnSuccessListener { hindiText ->
+
+                        for(block in hindiText.textBlocks)
+                        {
+                            for(line in block.lines)
+                            {
+                                /*if(line.text.contains("\u20B9"))
+                                {
+                                    rupeeLine.add(line.text)
+                                }*/
+                                for(element in line.elements)
+                                {
+                                    if(element.text.contains("\u20B9"))
+                                    {
+                                        rupeeLine.add(element.text)
+
+                                    }
+                                }
+                            }
+                        }
+                        //Toast.makeText(context, "$rupeeLine", Toast.LENGTH_SHORT).show()
+
+                    }
+
+
+
                 for (block in visionText.textBlocks) {
                     for (line in block.lines) {
                         for (element in line.elements) {
-
                             MainFragment.tokens.add(element.text)
                         }
-
                     }
                 }
 
 
                 val productResult = ExtractionFuns.extractProduct(visionText)
-                val mrpResult = ExtractionFuns.extractMrp(visionText)
+                val mrpResult = ExtractionFuns.extractMrp(visionText, rupeeLine)
                 val dates = ExtractionFuns.extractDates(visionText)
 //                    arrayOfProds.add(result)
 
@@ -209,7 +251,7 @@ class ImageAnalyzerMet(
 //                    maxEXPScore = dScore2
 //                    finalEXP = dates[1].toString()
 //                }
-                    //val manufacturingDate = dates
+                //val manufacturingDate = dates
 //                    val expiryDate = dates.second
 //                    if(manufacturingDate!=null && finalMFG!="") finalMFG = manufacturingDate
 //
@@ -235,6 +277,19 @@ class ImageAnalyzerMet(
                     //progressDialog.dismiss()
 
                 }*/
+
+
+
+                /*if(mark2.hasNotPassedNow())
+                {
+                    finalProdDisplay = finalProduct
+                }
+                else if(mark2.hasPassedNow() && toastFlag)
+                {
+                    Toast.makeText(context, "Scan the mrp and dates", Toast.LENGTH_SHORT).show()
+                    toastFlag = false
+                }*/
+
                 finalResult =
                     "Max product: ${productResult[0]}\n\n" +
                             "Score Prod: $pScore\n\n"+
@@ -251,6 +306,7 @@ class ImageAnalyzerMet(
                             "EXP date is: ${finalEXP}\n"+
                             "Final prod $finalProduct\n"+
                             "Final MRP $finalMRP\n"
+
 
 
                 recognizedTextView.text = finalResult
@@ -274,4 +330,6 @@ class ImageAnalyzerMet(
             "Waiting for text recognition model to be downloaded"
         } else exception.message
     }
+
+
 }

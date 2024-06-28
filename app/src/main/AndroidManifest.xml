@@ -20,6 +20,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TextRecognitionLive"
         tools:targetApi="31">
+
         <activity
             android:name=".FallBActivity"
             android:exported="false" />

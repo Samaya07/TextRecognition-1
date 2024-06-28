@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".FallBActivity">
 
-
     <EditText
         android:id="@+id/productIn"
         android:layout_width="match_parent"
@@ -34,8 +33,6 @@
         android:inputType="text"
         android:minHeight="48dp" />
 
-
-
     <EditText
         android:id="@+id/expIn"
         android:layout_width="match_parent"
@@ -52,8 +49,8 @@
         android:layout_gravity="center_horizontal"
         android:text="@string/confirm"
         android:backgroundTint="@android:color/holo_green_dark"
-        android:textColor="@android:color/white"
-        />
+        android:textColor="@android:color/white"/>
+
     <androidx.constraintlayout.helper.widget.Flow
         android:layout_width="0dp"
         android:layout_height="0dp"
