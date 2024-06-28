@@ -3,129 +3,68 @@ package com.android.example.textrecognitionlive.extraction
 import com.google.mlkit.vision.text.Text
 import java.util.Locale
 import kotlin.math.sqrt
-
+import kotlin.math.pow
+import java.util.*
+import kotlin.collections.ArrayList
 
 object ExtractionFuns {
 
-    //MRP FUNCTION EXTRACTION
-
+    // MRP FUNCTION EXTRACTION
     fun extractMrp(text: Text, rupeeLine: ArrayList<Double>): ArrayList<Any> {
-
         val recognizedText = text.text
-        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toMutableList()
-        var flag =0
-        if (wordsArray.isEmpty()) {
-            return arrayListOf("Not found", 0.0, listOf(0.0), listOf("Not found"))
-        }
-        data class SizeMRP(val size: Double, val element: String)
-        val sizesMrp = mutableListOf<SizeMRP>()
+        val wordsArray = recognizedText.split("\\s|:|;|\\.".toRegex()).filter { it.isNotEmpty() }
+        if (wordsArray.isEmpty()) return arrayListOf("Not found", 0.0, listOf(0.0), listOf("Not found"))
 
-        // Extract date and MRP related block
+        val sizesMrp = mutableListOf<SizeMRP>()
         var resBlock = ""
 
-        for (block in text.textBlocks) {
-            for (line in block.lines) {
-                for (element in line.elements) {
+        text.textBlocks.forEach { block ->
+            block.lines.forEach { line ->
+                line.elements.forEach { element ->
                     val elementText = element.text
-
-                    // Check for date and MRP related keywords
-                    if (resBlock == "" &&
-                        elementText.contains("Rs.", ignoreCase = true) ||
-                        elementText.contains("MRP", ignoreCase = true) ||
-                        elementText.contains("₹") ||
-                        elementText.contains("M.R.P", ignoreCase = true) ||
-                        elementText.contains("Rs", ignoreCase = true)) {
+                    if (resBlock.isEmpty() && elementText.contains(Regex("Rs.|MRP|₹|M.R.P|Rs", RegexOption.IGNORE_CASE))) {
                         resBlock = block.text
                     }
-
-                    // Check for numeric values
                     if (elementText.matches(Regex("\\d+(\\.\\d+)?"))) {
-                        val cornersM = element.cornerPoints
-                        val sizeM = if (cornersM != null && cornersM.size == 4) {
-                            val dx1 = (cornersM[0].x - cornersM[3].x).toDouble()
-                            val dy1 = (cornersM[0].y - cornersM[3].y).toDouble()
-                            sqrt(dx1 * dx1 + dy1 * dy1)
-                        } else 0.0
-                        sizesMrp.add(SizeMRP(sizeM, element.text))
+                        element.cornerPoints?.takeIf { it.size == 4 }?.let { corners ->
+                            val sizeM = sqrt((corners[0].x - corners[3].x).toDouble().pow(2) + (corners[0].y - corners[3].y).toDouble().pow(2))
+                            sizesMrp.add(SizeMRP(sizeM, elementText))
+                        }
                     }
                 }
             }
         }
 
         val top3MRP = sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
-
         val recognizedTextLines = recognizedText.split("\n")
-        val blockArray = resBlock.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
-        val mrpLine = recognizedTextLines.find {
-            it.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|/-|incl of taxes|MAP|inc of taxes|incl of tax|p)\b""", RegexOption.IGNORE_CASE))
-        } ?: "noneNull"
+        val blockArray = resBlock.split("\\s|:|;|\\.".toRegex()).filter { it.isNotEmpty() }
+        val mrpLine = recognizedTextLines.find { it.contains(Regex("\\b(Rs|MRP|₹|M.R.P|/-|incl of taxes|MAP|inc of taxes|incl of tax|p)\\b", RegexOption.IGNORE_CASE)) } ?: "noneNull"
+        val mrpLineArray = mrpLine.split("\\s|:|;|\\.".toRegex()).filter { it.isNotEmpty() }
 
-        val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
-
-        var mrpadder = 0.4
-        val mscoreArr = MutableList(wordsArray.size) { 0.0 }
-        wordsArray.forEachIndexed { i, word ->
+        val mscoreArr = wordsArray.mapIndexed { i, word ->
             var mscore = 0.0
-            if(word.toDoubleOrNull()!=null)
-            {
-                var num = word.toDouble()
+            word.toDoubleOrNull()?.let { num ->
                 mscore += 0.2
-                //MRP characteristics
-//increased to 0.6, test
-
                 if (num in rupeeLine) mscore += 1.5
-                else if(word.length>1 && (word.substring(1).toDouble() in rupeeLine)){
-                    wordsArray[i] = word.substring(1)
-                    num = wordsArray[i].toDouble()
-                    mscore += 1.5
-                }
-
-
                 if (num in 2.0..10000.0) mscore += 0.6
-
-                if (num != 9.0 && (num - 99) % 100 == 0.0 || (num - 9) % 10 == 0.0) {
-                    mscore += 0.3
-                }
-                if(num % 5 == 0.0 || num % 10 == 0.0 ||  num % 100 == 0.0  || num==2.0){
-                    mscore += 0.25
-                }
-                if(num==0.0) mscore -= 50.0
-//End test                //Conditions for address and weights
+                if (num != 9.0 && (num - 99) % 100 == 0.0 || (num - 9) % 10 == 0.0) mscore += 0.3
+                if (num % 5 == 0.0 || num % 10 == 0.0 || num % 100 == 0.0 || num == 2.0) mscore += 0.25
+                if (num == 0.0) mscore -= 50.0
                 if (num == 400.0 && wordsArray.getOrNull(i + 1)?.toDoubleOrNull() != null) mscore -= 0.8
-                if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\b""", RegexOption.IGNORE_CASE))) {
-                    mscore -= 0.8
-                }
-                //Condition for line
+                if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("\\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\\b", RegexOption.IGNORE_CASE))) mscore -= 0.8
                 if (mrpLineArray.contains(word)) mscore += 0.5
-                //Condition for years
                 if (num in 2020.0..2030.0) mscore -= 0.3
-                //Condition for block
                 if (blockArray.contains(word)) mscore += 0.3
-                top3MRP.forEach { topMrp ->
+                top3MRP.forEachIndexed { index, topMrp ->
                     if (topMrp.toDouble() == num) {
-                        mscore += mrpadder
-                        mrpadder -= 0.08
+                        mscore += 0.4 - index * 0.08
                     }
                 }
-                if( i<wordsArray.size - 1 &&(wordsArray[i+1]=="/-" || wordsArray[i+1]=="|-"))
-                    mscore += 0.5
-
-                if (flag==1) mscore += 0.6
+                if (i < wordsArray.size - 1 && (wordsArray[i + 1] == "/-" || wordsArray[i + 1] == "|-")) mscore += 0.5
             }
-//                if(flag==1) mscore += 0.4
-
-                if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) }) flag = 1
-//TEST
-            if (word.contains("/-")) {
-                val wordSplitTemp = word.split("/".toRegex()).filter { it.isNotEmpty() }
-                if(wordSplitTemp[0].toDoubleOrNull()!=null)
-                    mscore += 2.5
-            }
-
-//END TEST                if(word=="/-" || word=="|-") flag=2
-
-            mscoreArr[i] = mscore
-
+            if (word.lowercase(Locale.getDefault()) in listOf("rs", "mrp", "₹", "mr", "mrr", "mpp", "mpr")) mscore += 0.6
+            if (word.contains("/-") && word.split("/")[0].toDoubleOrNull() != null) mscore += 2.5
+            mscore
         }
 
         val maxIndex = mscoreArr.indices.maxByOrNull { mscoreArr[it] } ?: -1
@@ -134,193 +73,460 @@ object ExtractionFuns {
         return arrayListOf(m1, m1Score, rupeeLine, top3MRP)
     }
 
-    //PRODUCT FUNCTION EXTRACTION
+    // PRODUCT FUNCTION EXTRACTION
     fun extractProduct(text: Text): ArrayList<Any> {
         val recognizedText = text.text
-        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
-        val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
-        var lineOfProd = ""
-        if (wordsArray.isEmpty()) {
-            return arrayListOf("Not found", 0.0, "Not found")
-        }
-        data class ElementSize(val size: Double, val element: String)
+        val wordsArray = recognizedText.split("\\s|:|;|\\.".toRegex()).filter { it.isNotEmpty() }
+        if (wordsArray.isEmpty()) return arrayListOf("Not found", 0.0, "Not found")
 
         val elementSizes = mutableListOf<ElementSize>()
+        var lineOfProd = ""
 
-        for (block in text.textBlocks) {
-            for (line in block.lines) {
-                for (element in line.elements) {
-                    val corners = element.cornerPoints
-                    val size = if (corners != null && corners.size == 4) {
-                        val dx1 = (corners[0].x - corners[3].x).toDouble()
-                        val dy1 = (corners[0].y - corners[3].y).toDouble()
-                        sqrt(dx1 * dx1 + dy1 * dy1)
-                    } else 0.0
-                    elementSizes.add(ElementSize(size, element.text))
-                    if (element.text.contains(Regex("\\b(item|model name|product name|product|tem|roduct|ite|produc|roduc|tfm|name|genereric name|generic|description|model|content|contents)\\b", RegexOption.IGNORE_CASE)))
+        text.textBlocks.forEach { block ->
+            block.lines.forEach { line ->
+                line.elements.forEach { element ->
+                    element.cornerPoints?.takeIf { it.size == 4 }?.let { corners ->
+                        val size = sqrt((corners[0].x - corners[3].x).toDouble().pow(2) + (corners[0].y - corners[3].y).toDouble().pow(2))
+                        elementSizes.add(ElementSize(size, element.text))
+                    }
+                    if (element.text.contains(Regex("\\b(item|model name|product name|product|tem|roduct|ite|produc|roduc|tfm|name|genereric name|generic|description|model|content|contents)\\b", RegexOption.IGNORE_CASE))) {
+                        line.text.replace(element.text,"")
                         lineOfProd = line.text
-
+                    }
                 }
             }
         }
 
         val top5Elements = elementSizes.sortedByDescending { it.size }.take(3).map { it.element }
-
-
-
-        val scoreArr = MutableList(wordsArray.size) { 0.0 }
-        val specialCharPattern = Regex("[^a-zA-Z0-9]")
-        val moreThanThreeDigitsPattern = Regex("\\d{4,}")
-        val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
-
-        wordsArray.forEachIndexed { i, word ->
+        val scoreArr = wordsArray.mapIndexed { i, word ->
             var score = 0.0
             if (word.length >= 3) {
                 score += when {
                     word.uppercase() == word && word.toDoubleOrNull() == null -> 0.2
-                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() } == word && word.toDoubleOrNull() == null -> 0.16
+                    word.replaceFirstChar { it.titlecase(Locale.getDefault()) } == word && word.toDoubleOrNull() == null -> 0.16
                     else -> 0.08
                 }
                 if (wordsArray.size > 15) score -= 0.4
                 if (wordsArray.size < 5) score += 0.2
-                if (alphabetOnlyPattern.matches(word)) score += 0.15
-                if (specialCharPattern.containsMatchIn(word)) score -= 0.4
-                if (moreThanThreeDigitsPattern.containsMatchIn(word)) score -= 0.4
-//TEST
-                if(word in lineOfProd) score += 0.7
-
+                if (word.matches(Regex("^[a-zA-Z]+$"))) score += 0.15
+                if (word.contains(Regex("[^a-zA-Z0-9]"))) score -= 0.4
+                if (word.contains(Regex("\\d{4,}"))) score -= 0.4
+                if (word in lineOfProd) score += 0.5
                 top5Elements.forEachIndexed { index, element ->
                     if (element == word) score += 0.5 - index * 0.1
                 }
             }
-            scoreArr[i] = score
-        }
+            score
+        }.toMutableList()
 
         val maxIndex = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
-        val max1 = wordsArray.getOrElse(maxIndex) { "No found" }
+        val max1 = wordsArray.getOrElse(maxIndex) { "Not found" }
         val max1Score = scoreArr.getOrElse(maxIndex) { 0.0 }
         scoreArr[maxIndex] = 0.0
         val maxIndex2 = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
-        val max2 = wordsArray.getOrElse(maxIndex2) { "No found" }
+        val max2 = wordsArray.getOrElse(maxIndex2) { "Not found" }
 
-
-        var finalProd = max1
-        if(maxIndex2-maxIndex==1) {
-            finalProd = "$max1 $max2"
-            return arrayListOf(finalProd, max1Score, wordsArrayReturn)
-        }
-        var checker = 0
-        for (block in text.textBlocks) {
-            for (line in block.lines) {
-                for (element in line.elements) {
-                    if (max1 == element.text) {
-                        finalProd = block.text
-                        checker = 1
+        val finalProd = if (maxIndex2 - maxIndex == 1) {
+            "$max1 $max2"
+        } else {
+            var result = max1
+            for (block in text.textBlocks) {
+                for (line in block.lines) {
+                    if (result == line.elements.find { it.text == max1 }?.text) {
+                        result = block.text
                         break
                     }
                 }
-                if(checker==1) break
             }
-            if (checker==1) break
+            result
         }
 
-        val finalProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+        val finalProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }
+        val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
-        if (specialCharPattern.containsMatchIn(finalProd)) {
-            return if(specialCharPattern.containsMatchIn(max1)){
-                arrayListOf("Not found", 0.0, wordsArrayReturn)
-            } else{
-                arrayListOf(max1, max1Score, wordsArrayReturn)
-            }
+        return when {
+            finalProdArray.size > 3 || finalProd.contains(Regex("[^a-zA-Z0-9 ]")) -> arrayListOf(max1, max1Score, wordsArrayReturn)
+            else -> arrayListOf(finalProd, max1Score, wordsArrayReturn)
         }
-        if(finalProdArray.size > 3){
-            return arrayListOf(max1, max1Score, wordsArrayReturn)
-        }
-
-        return arrayListOf(finalProd, max1Score, wordsArrayReturn)
     }
 
+    // DATE FUNCTION EXTRACTION
     fun extractDates(text: Text): ArrayList<Any> {
         val recognizedText = text.text
-        var flag = 0
-        val wordsArray = recognizedText.split("[\\s:,]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
-        val months = listOf(
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-            "January", "February", "March", "April", "June", "July", "August", "September", "October", "November", "December"
-        ).map { it.lowercase(Locale.getDefault()) }
-        if (wordsArray.isEmpty()) {
-            return arrayListOf("Not found", "Not found",0.0,0.0)
-        }
-        val scoreArrD = MutableList(wordsArray.size) { 0.0 }
-        val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
-        var early1 = ""
-        var early2 = ""
-        wordsArray.forEachIndexed { i, word ->
+        val wordsArray = recognizedText.split("[\\s:,]".toRegex()).filter { it.isNotEmpty() }
+        if (wordsArray.isEmpty()) return arrayListOf("Not found", "Not found", 0.0, 0.0)
+
+        val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+            "January", "February", "March", "April", "June", "July", "August", "September", "October", "November", "December")
+            .map { it.lowercase(Locale.getDefault()) }
+
+        val scoreArrD = wordsArray.map { word ->
             var dScore = 0.0
-            val lowerCaseWord = word.lowercase(Locale.getDefault())
-
-            val wordSplit = word.split("[/.-]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
-            if (word.toDoubleOrNull() == null && !alphabetOnlyPattern.matches(word)) {
-//                if (word.contains("/") || word.contains("-") || word.contains(".")) {
-//                    dScore += 0.5
-//                }
-                val slashCount = word.count { it == '/' }
-                val dashCount = word.count { it == '-' }
-                val dotCount = word.count { it == '.' }
-
-                if(word.contains(":")||word.contains("com")) dScore -= 1.0
-                if(slashCount in 1..2) dScore += 0.3 * slashCount
-                else if(dashCount in 1..2) dScore += 0.22 * dashCount
-                else if(dotCount in 1..2) dScore += 0.22 * dotCount
-
-                for(ele in wordSplit){
-                    if(ele.toDoubleOrNull()!=null){
-                        if(ele.toDouble() in 1.0..30.0){
-                            dScore += 0.2
+            if (word.toDoubleOrNull() == null && !word.matches(Regex("^[a-zA-Z]+$"))) {
+                val punctuationCount = word.count { it in listOf('/', '-', '.') }
+                dScore += 0.3 * punctuationCount.coerceIn(0, 2)
+                word.split("[/.-]".toRegex()).filter { it.isNotEmpty() }.forEach { ele ->
+                    ele.toDoubleOrNull()?.let {
+                        dScore += when (it) {
+                            in 1.0..30.0 -> 0.2
+                            in 2000.0..2100.0 -> 0.4
+                            else -> 0.0
                         }
-                        if(ele.toDouble() in 2000.0..2100.0)
-                            dScore += 0.4
-                    }
-                    else{
-                        if(ele in months) dScore+=0.4
-                    }
+                    } ?: if (ele.lowercase(Locale.getDefault()) in months) dScore += 0.4 else dScore+=0.0
                 }
+            } else if (word.lowercase(Locale.getDefault()) in months) {
+                dScore += 0.4
             }
-            //For emtpy spaced cases
-            else {
-                if(lowerCaseWord in months){
+            dScore
+        }.toMutableList()
 
-                    if(flag==0){
-                        if(i<wordsArray.size - 1) {
-                            early1 = lowerCaseWord + " "+wordsArray[i + 1]
-                            flag =1
-                        }
-                    }
-                    else{
-                        if(i<wordsArray.size - 1) {
-                            flag = 2
-                            early2 =lowerCaseWord + wordsArray[i+1]
-                        }
-                    }
-                }
-            }
-            scoreArrD[i] = dScore
-        }
-        if(flag==1) return arrayListOf(early1.capitalize(Locale.ROOT),"Null",0.7,0.7)
-        else if(flag==2) return arrayListOf(early1.capitalize(Locale.ROOT),early2.capitalize(Locale.ROOT),0.9,0.9)
         val maxIndex = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
-        val m1 = wordsArray[maxIndex]
-        val m1Score = scoreArrD[maxIndex]
+        val m1 = wordsArray.getOrElse(maxIndex) { "Not found" }
+        val m1Score = scoreArrD.getOrElse(maxIndex) { 0.0 }
         scoreArrD[maxIndex] = 0.0
         val maxIndex2 = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
-        val m2 = wordsArray[maxIndex2]
-        val m2Score = scoreArrD[maxIndex2]
+        val m2 = wordsArray.getOrElse(maxIndex2) { "Not found" }
+        val m2Score = scoreArrD.getOrElse(maxIndex2) { 0.0 }
 
-        return if(maxIndex<maxIndex2)
-            arrayListOf(m1,m2,m1Score,m2Score)
-        else
-            arrayListOf(m2,m1,m2Score,m1Score)
+        return if (maxIndex < maxIndex2) arrayListOf(m1, m2, m1Score, m2Score) else arrayListOf(m2, m1, m2Score, m1Score)
     }
+
+    // Data classes for size-related information
+    data class SizeMRP(val size: Double, val element: String)
+    data class ElementSize(val size: Double, val element: String)
+}
+
+
+
+
+
+///////THIS IS BEFORE OPTIMIZATION
+
+
+//object ExtractionFuns {
+//
+//    //MRP FUNCTION EXTRACTION
+//
+//    fun extractMrp(text: Text, rupeeLine: ArrayList<Double>): ArrayList<Any> {
+//
+//        val recognizedText = text.text
+//        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toMutableList()
+//        var flag =0
+//        if (wordsArray.isEmpty()) {
+//            return arrayListOf("Not found", 0.0, listOf(0.0), listOf("Not found"))
+//        }
+//        data class SizeMRP(val size: Double, val element: String)
+//        val sizesMrp = mutableListOf<SizeMRP>()
+//
+//        // Extract date and MRP related block
+//        var resBlock = ""
+//
+//        for (block in text.textBlocks) {
+//            for (line in block.lines) {
+//                for (element in line.elements) {
+//                    val elementText = element.text
+//
+//                    // Check for date and MRP related keywords
+//                    if (resBlock == "" &&
+//                        elementText.contains("Rs.", ignoreCase = true) ||
+//                        elementText.contains("MRP", ignoreCase = true) ||
+//                        elementText.contains("₹") ||
+//                        elementText.contains("M.R.P", ignoreCase = true) ||
+//                        elementText.contains("Rs", ignoreCase = true)) {
+//                        resBlock = block.text
+//                    }
+//
+//                    // Check for numeric values
+//                    if (elementText.matches(Regex("\\d+(\\.\\d+)?"))) {
+//                        val cornersM = element.cornerPoints
+//                        val sizeM = if (cornersM != null && cornersM.size == 4) {
+//                            val dx1 = (cornersM[0].x - cornersM[3].x).toDouble()
+//                            val dy1 = (cornersM[0].y - cornersM[3].y).toDouble()
+//                            sqrt(dx1 * dx1 + dy1 * dy1)
+//                        } else 0.0
+//                        sizesMrp.add(SizeMRP(sizeM, element.text))
+//                    }
+//                }
+//            }
+//        }
+//
+//        val top3MRP = sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
+//
+//        val recognizedTextLines = recognizedText.split("\n")
+//        val blockArray = resBlock.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+//        val mrpLine = recognizedTextLines.find {
+//            it.contains(Regex("""\b(?:Rs|MRP|mrp|₹|MR|MRR|MPP|MPR|M.R.P|Rs.|/-|incl of taxes|MAP|inc of taxes|incl of tax|p)\b""", RegexOption.IGNORE_CASE))
+//        } ?: "noneNull"
+//
+//        val mrpLineArray = mrpLine.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+//
+//        var mrpadder = 0.4
+//        val mscoreArr = MutableList(wordsArray.size) { 0.0 }
+//        wordsArray.forEachIndexed { i, word ->
+//            var mscore = 0.0
+//            if(word.toDoubleOrNull()!=null)
+//            {
+//                var num = word.toDouble()
+//                mscore += 0.2
+//                //MRP characteristics
+////increased to 0.6, test
+//
+//                if (num in rupeeLine) mscore += 1.5
+//                else if(word.length>1 && (word.substring(1).toDouble() in rupeeLine)){
+//                    wordsArray[i] = word.substring(1)
+//                    num = wordsArray[i].toDouble()
+//                    mscore += 1.5
+//                }
+//
+//
+//                if (num in 2.0..10000.0) mscore += 0.6
+//
+//                if (num != 9.0 && (num - 99) % 100 == 0.0 || (num - 9) % 10 == 0.0) {
+//                    mscore += 0.3
+//                }
+//                if(num % 5 == 0.0 || num % 10 == 0.0 ||  num % 100 == 0.0  || num==2.0){
+//                    mscore += 0.25
+//                }
+//                if(num==0.0) mscore -= 50.0
+////End test                //Conditions for address and weights
+//                if (num == 400.0 && wordsArray.getOrNull(i + 1)?.toDoubleOrNull() != null) mscore -= 0.8
+//                if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("""\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\b""", RegexOption.IGNORE_CASE))) {
+//                    mscore -= 0.8
+//                }
+//                //Condition for line
+//                if (mrpLineArray.contains(word)) mscore += 0.5
+//                //Condition for years
+//                if (num in 2020.0..2030.0) mscore -= 0.3
+//                //Condition for block
+//                if (blockArray.contains(word)) mscore += 0.3
+//                top3MRP.forEach { topMrp ->
+//                    if (topMrp.toDouble() == num) {
+//                        mscore += mrpadder
+//                        mrpadder -= 0.08
+//                    }
+//                }
+//                if( i<wordsArray.size - 1 &&(wordsArray[i+1]=="/-" || wordsArray[i+1]=="|-"))
+//                    mscore += 0.5
+//
+//                if (flag==1) mscore += 0.6
+//            }
+////                if(flag==1) mscore += 0.4
+//
+//                if(word.lowercase(Locale.getDefault()) in listOf("Rs","MRP","mrp","₹","MR","MRR","MPP","MPR").map { it.lowercase(Locale.getDefault()) }) flag = 1
+////TEST
+//            if (word.contains("/-")) {
+//                val wordSplitTemp = word.split("/".toRegex()).filter { it.isNotEmpty() }
+//                if(wordSplitTemp[0].toDoubleOrNull()!=null)
+//                    mscore += 2.5
+//            }
+//
+////END TEST                if(word=="/-" || word=="|-") flag=2
+//
+//            mscoreArr[i] = mscore
+//
+//        }
+//
+//        val maxIndex = mscoreArr.indices.maxByOrNull { mscoreArr[it] } ?: -1
+//        val m1 = wordsArray[maxIndex]
+//        val m1Score = mscoreArr[maxIndex]
+//        return arrayListOf(m1, m1Score, rupeeLine, top3MRP)
+//    }
+//
+//    //PRODUCT FUNCTION EXTRACTION
+//    fun extractProduct(text: Text): ArrayList<Any> {
+//        val recognizedText = text.text
+//        val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+//        val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
+//        var lineOfProd = ""
+//        if (wordsArray.isEmpty()) {
+//            return arrayListOf("Not found", 0.0, "Not found")
+//        }
+//        data class ElementSize(val size: Double, val element: String)
+//
+//        val elementSizes = mutableListOf<ElementSize>()
+//
+//        for (block in text.textBlocks) {
+//            for (line in block.lines) {
+//                for (element in line.elements) {
+//                    val corners = element.cornerPoints
+//                    val size = if (corners != null && corners.size == 4) {
+//                        val dx1 = (corners[0].x - corners[3].x).toDouble()
+//                        val dy1 = (corners[0].y - corners[3].y).toDouble()
+//                        sqrt(dx1 * dx1 + dy1 * dy1)
+//                    } else 0.0
+//                    elementSizes.add(ElementSize(size, element.text))
+//                    if (element.text.contains(Regex("\\b(item|model name|product name|product|tem|roduct|ite|produc|roduc|tfm|name|genereric name|generic|description|model|content|contents)\\b", RegexOption.IGNORE_CASE)))
+//                        lineOfProd = line.text
+//
+//                }
+//            }
+//        }
+//
+//        val top5Elements = elementSizes.sortedByDescending { it.size }.take(3).map { it.element }
+//
+//
+//
+//        val scoreArr = MutableList(wordsArray.size) { 0.0 }
+//        val specialCharPattern = Regex("[^a-zA-Z0-9]")
+//        val moreThanThreeDigitsPattern = Regex("\\d{4,}")
+//        val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
+//
+//        wordsArray.forEachIndexed { i, word ->
+//            var score = 0.0
+//            if (word.length >= 3) {
+//                score += when {
+//                    word.uppercase() == word && word.toDoubleOrNull() == null -> 0.2
+//                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() } == word && word.toDoubleOrNull() == null -> 0.16
+//                    else -> 0.08
+//                }
+//                if (wordsArray.size > 15) score -= 0.4
+//                if (wordsArray.size < 5) score += 0.2
+//                if (alphabetOnlyPattern.matches(word)) score += 0.15
+//                if (specialCharPattern.containsMatchIn(word)) score -= 0.4
+//                if (moreThanThreeDigitsPattern.containsMatchIn(word)) score -= 0.4
+////TEST
+//                if(word in lineOfProd) score += 0.7
+//
+//                top5Elements.forEachIndexed { index, element ->
+//                    if (element == word) score += 0.5 - index * 0.1
+//                }
+//            }
+//            scoreArr[i] = score
+//        }
+//
+//        val maxIndex = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
+//        val max1 = wordsArray.getOrElse(maxIndex) { "No found" }
+//        val max1Score = scoreArr.getOrElse(maxIndex) { 0.0 }
+//        scoreArr[maxIndex] = 0.0
+//        val maxIndex2 = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
+//        val max2 = wordsArray.getOrElse(maxIndex2) { "No found" }
+//
+//
+//        var finalProd = max1
+//        if(maxIndex2-maxIndex==1) {
+//            finalProd = "$max1 $max2"
+//            return arrayListOf(finalProd, max1Score, wordsArrayReturn)
+//        }
+//        var checker = 0
+//        for (block in text.textBlocks) {
+//            for (line in block.lines) {
+//                for (element in line.elements) {
+//                    if (max1 == element.text) {
+//                        finalProd = block.text
+//                        checker = 1
+//                        break
+//                    }
+//                }
+//                if(checker==1) break
+//            }
+//            if (checker==1) break
+//        }
+//
+//        val finalProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+//
+//        if (specialCharPattern.containsMatchIn(finalProd)) {
+//            return if(specialCharPattern.containsMatchIn(max1)){
+//                arrayListOf("Not found", 0.0, wordsArrayReturn)
+//            } else{
+//                arrayListOf(max1, max1Score, wordsArrayReturn)
+//            }
+//        }
+//        if(finalProdArray.size > 3){
+//            return arrayListOf(max1, max1Score, wordsArrayReturn)
+//        }
+//
+//        return arrayListOf(finalProd, max1Score, wordsArrayReturn)
+//    }
+//
+//    fun extractDates(text: Text): ArrayList<Any> {
+//        val recognizedText = text.text
+//        var flag = 0
+//        val wordsArray = recognizedText.split("[\\s:,]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+//        val months = listOf(
+//            "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+//            "January", "February", "March", "April", "June", "July", "August", "September", "October", "November", "December"
+//        ).map { it.lowercase(Locale.getDefault()) }
+//        if (wordsArray.isEmpty()) {
+//            return arrayListOf("Not found", "Not found",0.0,0.0)
+//        }
+//        val scoreArrD = MutableList(wordsArray.size) { 0.0 }
+//        val alphabetOnlyPattern = Regex("^[a-zA-Z]+$")
+//        var early1 = ""
+//        var early2 = ""
+//        wordsArray.forEachIndexed { i, word ->
+//            var dScore = 0.0
+//            val lowerCaseWord = word.lowercase(Locale.getDefault())
+//
+//            val wordSplit = word.split("[/.-]".toRegex()).filter { it.isNotEmpty() }.toTypedArray()
+//            if (word.toDoubleOrNull() == null && !alphabetOnlyPattern.matches(word)) {
+////                if (word.contains("/") || word.contains("-") || word.contains(".")) {
+////                    dScore += 0.5
+////                }
+//                val slashCount = word.count { it == '/' }
+//                val dashCount = word.count { it == '-' }
+//                val dotCount = word.count { it == '.' }
+//
+//                if(word.contains(":")||word.contains("com")) dScore -= 1.0
+//                if(slashCount in 1..2) dScore += 0.3 * slashCount
+//                else if(dashCount in 1..2) dScore += 0.22 * dashCount
+//                else if(dotCount in 1..2) dScore += 0.22 * dotCount
+//
+//                for(ele in wordSplit){
+//                    if(ele.toDoubleOrNull()!=null){
+//                        if(ele.toDouble() in 1.0..30.0){
+//                            dScore += 0.2
+//                        }
+//                        if(ele.toDouble() in 2000.0..2100.0)
+//                            dScore += 0.4
+//                    }
+//                    else{
+//                        if(ele in months) dScore+=0.4
+//                    }
+//                }
+//            }
+//            //For emtpy spaced cases
+//            else {
+//                if(lowerCaseWord in months){
+//
+//                    if(flag==0){
+//                        if(i<wordsArray.size - 1) {
+//                            early1 = lowerCaseWord + " "+wordsArray[i + 1]
+//                            flag =1
+//                        }
+//                    }
+//                    else{
+//                        if(i<wordsArray.size - 1) {
+//                            flag = 2
+//                            early2 =lowerCaseWord + wordsArray[i+1]
+//                        }
+//                    }
+//                }
+//            }
+//            scoreArrD[i] = dScore
+//        }
+//        if(flag==1) return arrayListOf(early1.capitalize(Locale.ROOT),"Null",0.7,0.7)
+//        else if(flag==2) return arrayListOf(early1.capitalize(Locale.ROOT),early2.capitalize(Locale.ROOT),0.9,0.9)
+//        val maxIndex = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
+//        val m1 = wordsArray[maxIndex]
+//        val m1Score = scoreArrD[maxIndex]
+//        scoreArrD[maxIndex] = 0.0
+//        val maxIndex2 = scoreArrD.indices.maxByOrNull { scoreArrD[it] } ?: -1
+//        val m2 = wordsArray[maxIndex2]
+//        val m2Score = scoreArrD[maxIndex2]
+//
+//        return if(maxIndex<maxIndex2)
+//            arrayListOf(m1,m2,m1Score,m2Score)
+//        else
+//            arrayListOf(m2,m1,m2Score,m1Score)
+//    }
+
+
+
+///////THIS IS BEFORE OPTIMIZATION END
+
+
+
+
 
 //    fun extractMrp(text: Text): ArrayList<Any> {
 //
@@ -532,8 +738,6 @@ object ExtractionFuns {
 //
 //        return manufacturingDate to expiryDate
 //    }
-
-
     //Date trial kapil
 //        fun extractDates(text: String): ArrayList<Any> {
 //        if(text.length < 2){
@@ -683,7 +887,7 @@ object ExtractionFuns {
 //
 //        return manufacturingDate to expiryDate
 //    }
-
+//}
 
 
 
@@ -1077,4 +1281,3 @@ object ExtractionFuns {
 //        return manufacturingDate to expiryDate
 //        //return finalMFG to finalEXP
 //    }
-}
