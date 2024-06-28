@@ -8,7 +8,8 @@ import kotlin.math.sqrt
 object ExtractionFuns {
 
     //MRP FUNCTION EXTRACTION
-    fun extractMrp(text: Text): ArrayList<Any> {
+
+    fun extractMrp(text: Text, rupeeLine: ArrayList<Any>): ArrayList<Any> {
 
         val recognizedText = text.text
         val wordsArray = recognizedText.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }

@@ -1,5 +1,6 @@
 package com.android.example.textrecognitionlive.main
 
+//import kotlinx.coroutines.delay
 import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
@@ -46,6 +47,9 @@ import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 
 class MainFragment : Fragment(){
@@ -107,6 +111,8 @@ class MainFragment : Fragment(){
         // background threads after 60s of idling.
     }
 
+
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -146,13 +152,20 @@ class MainFragment : Fragment(){
                             text = getString(R.string.stop)
                         }
                         //setUpCamera()
+
+                        val timeSource = TimeSource.Monotonic
+                        val mark1 = timeSource.markNow()
+                        val threeSec: Duration = 6.seconds
+                        val mark2 = mark1 + threeSec
+
                         imageAnalyzer?.setAnalyzer(cameraExecutor, ImageAnalyzerMet(
                             requireContext(),
                             lifecycle,
                             cameraExecutor,
                             imageCropPercentages,
-                            recognizedTextV
+                            recognizedTextV, mark2
                         ))
+
                     }
                     else if(flag == 0)
                     {
@@ -160,6 +173,8 @@ class MainFragment : Fragment(){
                         startBt.apply{
                             text = getString(R.string.start)
                         }
+
+                        Log.i(TAG, "thisonehere: $labels")
                         stopCamera()
                     }
                 }

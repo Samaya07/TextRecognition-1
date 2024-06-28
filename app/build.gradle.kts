@@ -57,6 +57,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.3")
     implementation("androidx.camera:camera-extensions:1.3.3")
     implementation("com.google.mlkit:text-recognition:16.0.0")
+    implementation("com.google.mlkit:text-recognition-devanagari:16.0.0")
     implementation("com.google.mlkit:vision-common:16.0.0")
     implementation("com.google.android.gms:play-services-vision-common:19.1.3")
     implementation("androidx.constraintlayout:constraintlayout-core:1.0.4")
