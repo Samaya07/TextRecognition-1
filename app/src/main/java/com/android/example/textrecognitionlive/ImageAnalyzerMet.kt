@@ -35,7 +35,7 @@ class ImageAnalyzerMet(
     private val detector =
         TextRecognition.getClient(TextRecognizerOptions.Builder().setExecutor(executor).build())
     private val devanagiriDetector = TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
-    private var rupeeLine = arrayListOf <Any>()
+    private var rupeeLine = arrayListOf <Double>()
 
 //    private val detect3 = TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
 
@@ -136,16 +136,13 @@ class ImageAnalyzerMet(
                 devanagiriDetector.process(image)
                     .addOnSuccessListener { hindiText ->
                         var rupee = ""
+                        var filteredRupee = listOf<Any>("")
+                        rupeeLine.clear()
                         for (block in hindiText.textBlocks) {
                             for (line in block.lines) {
-                                /*if(line.text.contains("\u20B9"))
-                                {
-                                    rupeeLine.add(line.text)
-                                }*/
                                 for ((i, element) in line.elements.withIndex()) {
                                     if (element.text.contains("\u20B9")) {
-                                        var index = i
-                                        if (element.text.length > 1) {
+                                        if(element.text.length > 1) {
                                             rupee += element.text.replace("\u20B9", "")
                                         } else {
                                             // Check if there is a next element
@@ -159,7 +156,7 @@ class ImageAnalyzerMet(
                                 }
                             }
                         }
-                        val filteredRupee = rupee.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
+                        filteredRupee = rupee.split("[\\s:;.]".toRegex()).filter { it.isNotEmpty() }
                         for (each in filteredRupee)
                         {
                             each.toDoubleOrNull()?.let { rupeeLine.add(it) }
