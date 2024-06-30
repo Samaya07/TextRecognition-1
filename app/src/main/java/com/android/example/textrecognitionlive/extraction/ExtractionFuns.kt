@@ -77,7 +77,7 @@ object ExtractionFuns {
     fun extractProduct(text: Text): ArrayList<Any> {
         val recognizedText = text.text
         val wordsArray = recognizedText.split("\\s|:|;|\\.".toRegex()).filter { it.isNotEmpty() }
-        if (wordsArray.isEmpty()) return arrayListOf("Not found", 0.0, "Not found")
+        if (wordsArray.isEmpty()) return arrayListOf(arrayListOf("nf","nf"), 0.0, "Not found")
 
         val elementSizes = mutableListOf<ElementSize>()
         var lineOfProd = ""
@@ -125,6 +125,10 @@ object ExtractionFuns {
         scoreArr[maxIndex] = 0.0
         val maxIndex2 = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
         val max2 = wordsArray.getOrElse(maxIndex2) { "Not found" }
+        scoreArr[maxIndex2] = 0.0
+        val maxIndex3 = scoreArr.indices.maxByOrNull { scoreArr[it] } ?: -1
+        val max3 = wordsArray.getOrElse(maxIndex3) { "Not found" }
+
 
         val finalProd = if (maxIndex2 - maxIndex == 1) {
             "$max1 $max2"
@@ -141,13 +145,14 @@ object ExtractionFuns {
             result
         }
 
-        val finalProdArray = finalProd.split("\\s".toRegex()).filter { it.isNotEmpty() }
+        val finalProdArray = finalProd.split(" ").toTypedArray()
         val wordsArrayReturn = wordsArray.joinToString(prefix = "[", postfix = "]", separator = ", ")
 
-        return when {
-            finalProdArray.size > 3 || finalProd.contains(Regex("[^a-zA-Z0-9 ]")) -> arrayListOf(max1, max1Score, wordsArrayReturn)
-            else -> arrayListOf(finalProd, max1Score, wordsArrayReturn)
+        if(finalProdArray.size > 3) {
+        return arrayListOf( arrayListOf(max1,max2,max3), max1Score, wordsArrayReturn)
         }
+        else
+            return arrayListOf(arrayListOf(finalProd,max3), max1Score, wordsArrayReturn)
     }
 
     // DATE FUNCTION EXTRACTION

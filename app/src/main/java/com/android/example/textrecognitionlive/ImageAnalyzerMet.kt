@@ -186,27 +186,12 @@ class ImageAnalyzerMet(
                 val productResult = ExtractionFuns.extractProduct(visionText)
                 val mrpResult = ExtractionFuns.extractMrp(visionText, rupeeLine)
                 val dates = ExtractionFuns.extractDates(visionText)
-//                    arrayOfProds.add(result)
-
-                val recognizedText = visionText.text
-
-
-//Date Function
+//Final Date
                 val dateResult = dates[0].toString()
                 val dScore1 = dates[2].toString().toDouble()
                 val dateResult2 = dates[1].toString()
                 val dScore2 = dates[3].toString().toDouble()
                 val dScoreAvg = (dScore1+dScore2)/2
-//                if(dScore1>maxMFGScore){
-//                    finalMFG = dateResult
-//                    maxMFGScore = dScore1
-//                }
-//                if(dScore2>maxEXPScore){
-//                    finalEXP = dateResult2
-//                    maxEXPScore = dScore2
-//                }
-
-//TEST thershold
                 if(dScoreAvg>=maxDateScore){
                     if(dScore2>=0.4) {
                         maxDateScore = dScoreAvg
@@ -219,30 +204,31 @@ class ImageAnalyzerMet(
                         finalEXP = "Not found"
                     }
                 }
-
-                //Picking max score product
+//Final Product
                 var pScore = productResult[1].toString().toDouble()
                 val mScore = mrpResult[1].toString().toDouble()
                 val wordsArrayDisplay = productResult[2]
-                val mScoreArray = mrpResult[2]
+//                val mScoreArray = mrpResult[2]
+                val pReturn = productResult[0].toString().substring(1,productResult[0].toString().length-1).split(",").toTypedArray()
 
-//Picking Final Product
-//TEST
                 //date and prod relation condition
                 if(maxDateScore>=0.5) pScore -= 0.4
+
                 if(pScore>maxScore){
-                    finalProduct = productResult[0].toString()
+                    finalProduct = ""
+                    pReturn.forEach { finalProduct += it }
                     maxScore = pScore
                 }
                 else if(pScore==maxScore){
-                    if(productResult[0].toString().length>=finalProduct.length)
+                    if(pReturn.joinToString(separator = " ").length>=finalProduct.length)
                     {
-                        finalProduct = productResult[0].toString()
+                        finalProduct = ""
+                        pReturn.forEach { finalProduct += it }
                         maxScore = pScore
                     }
                 }
 
-//Picking Final MRP
+//Final MRP
                 if(mScore>maxMRPScore) {
                     if(mScore>0.0){
                         finalMRP = mrpResult[0].toString()
@@ -320,7 +306,7 @@ class ImageAnalyzerMet(
                             "EXP date is: ${finalEXP}\n"+
                             "Final prod $finalProduct\n"+
                             "Final MRP $finalMRP\n\n" +
-                            "Max product: ${productResult[0]}\n"+
+                            "Max product: ${pReturn.joinToString(prefix = "[", postfix = "]", separator = ", ")}\n"+
                             "Price:${mrpResult[0]}\n"+
                             "Words Array:$wordsArrayDisplay"
 
