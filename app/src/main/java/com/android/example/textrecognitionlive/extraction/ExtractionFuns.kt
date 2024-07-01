@@ -13,7 +13,7 @@ object ExtractionFuns {
     fun extractMrp(text: Text, rupeeLine: ArrayList<Double>): ArrayList<Any> {
         val recognizedText = text.text
         val wordsArray = recognizedText.split("\\s|:|;|\\.".toRegex()).filter { it.isNotEmpty() }
-        if (wordsArray.isEmpty()) return arrayListOf("Not found", 0.0, listOf(0.0), listOf("Not found"))
+        if (wordsArray.isEmpty()) return arrayListOf(arrayListOf("nf", "nf"), arrayListOf(0.0, 0.0), listOf(0.0), listOf("Not found"))
 
         val sizesMrp = mutableListOf<SizeMRP>()
         var resBlock = ""
@@ -38,7 +38,7 @@ object ExtractionFuns {
         val top3MRP = sizesMrp.sortedByDescending { it.size }.take(5).map { it.element }
         val recognizedTextLines = recognizedText.split("\n")
         val blockArray = resBlock.split("\\s|:|;|\\.".toRegex()).filter { it.isNotEmpty() }
-        val mrpLine = recognizedTextLines.find { it.contains(Regex("\\b(Rs|MRP|₹|M.R.P|/-|incl of taxes|MAP|inc of taxes|incl of tax|p)\\b", RegexOption.IGNORE_CASE)) } ?: "noneNull"
+        val mrpLine = recognizedTextLines.find { it.contains(Regex("\\b(Rs|MRP|M.R.P|/-|incl of taxes|MAP|inc of taxes|incl of tax|p)\\b", RegexOption.IGNORE_CASE)) } ?: "noneNull"
         val mrpLineArray = mrpLine.split("\\s|:|;|\\.".toRegex()).filter { it.isNotEmpty() }
 
         val mscoreArr = wordsArray.mapIndexed { i, word ->
@@ -51,6 +51,7 @@ object ExtractionFuns {
                 if (num % 5 == 0.0 || num % 10 == 0.0 || num % 100 == 0.0 || num == 2.0) mscore += 0.25
                 if (num == 0.0) mscore -= 50.0
                 if (num == 400.0 && wordsArray.getOrNull(i + 1)?.toDoubleOrNull() != null) mscore -= 0.8
+                if (i>0 && wordsArray[i-1].toDoubleOrNull()!=null) mscore -= 0.5
                 if (i + 1 < wordsArray.size && wordsArray[i + 1].contains(Regex("\\b(g|Kg|ml|mg|l|per|pe|n|9|k9)\\b", RegexOption.IGNORE_CASE))) mscore -= 0.8
                 if (mrpLineArray.contains(word)) mscore += 0.5
                 if (num in 2020.0..2030.0) mscore -= 0.3
@@ -65,12 +66,18 @@ object ExtractionFuns {
             if (word.lowercase(Locale.getDefault()) in listOf("rs", "mrp", "₹", "mr", "mrr", "mpp", "mpr")) mscore += 0.6
             if (word.contains("/-") && word.split("/")[0].toDoubleOrNull() != null) mscore += 2.5
             mscore
-        }
+        }.toMutableList()
 
         val maxIndex = mscoreArr.indices.maxByOrNull { mscoreArr[it] } ?: -1
         val m1 = wordsArray[maxIndex]
         val m1Score = mscoreArr[maxIndex]
-        return arrayListOf(m1, m1Score, rupeeLine, top3MRP)
+        mscoreArr[maxIndex] = 0.0
+        val maxIndex2 = mscoreArr.indices.maxByOrNull { mscoreArr[it] } ?: -1
+        val m2 = wordsArray[maxIndex2]
+        val m2Score = mscoreArr[maxIndex2]
+
+
+        return arrayListOf(arrayListOf(m1,m2), arrayListOf<Double>(m1Score,m2Score), rupeeLine, top3MRP)
     }
 
     // PRODUCT FUNCTION EXTRACTION

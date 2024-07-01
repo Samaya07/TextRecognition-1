@@ -206,7 +206,6 @@ class ImageAnalyzerMet(
                 }
 //Final Product
                 var pScore = productResult[1].toString().toDouble()
-                val mScore = mrpResult[1].toString().toDouble()
                 val wordsArrayDisplay = productResult[2]
 //                val mScoreArray = mrpResult[2]
                 val pReturn = productResult[0].toString().substring(1,productResult[0].toString().length-1).split(",").toTypedArray()
@@ -228,11 +227,15 @@ class ImageAnalyzerMet(
                     }
                 }
 
-//Final MRP
-                if(mScore>maxMRPScore) {
-                    if(mScore>0.0){
-                        finalMRP = mrpResult[0].toString()
-                        maxMRPScore = mScore
+//Picking Final MRP
+//                val mScore = mrpResult[1].toString().toDouble()
+                val mrpArrayS = mrpResult[1].toString().substring(1,mrpResult[1].toString().length-1).split(",").toTypedArray()
+                val mrpArray = mrpResult[0].toString().substring(1,mrpResult[0].toString().length-1).split(",").toTypedArray()
+//                val avgScore = (mrpArrayS[0].toDouble() + mrpArrayS[1].toDouble())/2
+                if(mrpArrayS[0].toDouble()>maxMRPScore) {
+                    if(mrpArrayS[0].toDouble()>0.0){
+                        finalMRP = mrpArray[0] + " " +mrpArray[1]
+                        maxMRPScore = mrpArrayS[0].toDouble()
                     }
                     else{
                         finalMRP = "Not found"
@@ -302,13 +305,15 @@ class ImageAnalyzerMet(
 //                            "Score of exp: ${dScore2}\n"+
 //                            "Prod max score:$maxScore\n"+
 //                            "MRP max score: $maxMRPScore\n\n"+
+                            "Max product: ${pReturn.joinToString(prefix = "[", postfix = "]", separator = ", ")}\n"+
+                            "Price:${mrpResult[0]}\n"+
+                            "Words Array:$wordsArrayDisplay\n\n"+
                             "MFG date is: ${finalMFG}\n" +
                             "EXP date is: ${finalEXP}\n"+
                             "Final prod $finalProduct\n"+
-                            "Final MRP $finalMRP\n\n" +
-                            "Max product: ${pReturn.joinToString(prefix = "[", postfix = "]", separator = ", ")}\n"+
-                            "Price:${mrpResult[0]}\n"+
-                            "Words Array:$wordsArrayDisplay"
+                            "Final MRP $finalMRP"
+//                                    "MRP arrays: ${mrpArrayS[0]} ${mrpArrayS[1]"
+
 
 
                 recognizedTextView.text = finalResult
