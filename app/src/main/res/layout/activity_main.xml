@@ -58,19 +58,6 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"/>
 
-    <Button
-        android:id="@+id/fallback_button"
-        android:layout_width="110dp"
-        android:layout_height="80dp"
-        android:layout_marginStart="240dp"
-        android:layout_marginTop="0dp"
-        android:layout_marginBottom="150dp"
-        android:elevation="2dp"
-        android:text="@string/fallback"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"/>
-
     <!--<Button
         android:id="@+id/stop_button"
         android:layout_width="100dp"

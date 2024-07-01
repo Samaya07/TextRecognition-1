@@ -2,8 +2,6 @@ package com.android.example.textrecognitionlive.main
 
 //import kotlinx.coroutines.delay
 import android.Manifest
-import android.content.ContentValues
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Paint
@@ -35,11 +33,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import com.android.example.textrecognitionlive.FallBActivity
 import com.android.example.textrecognitionlive.ImageAnalyzerMet
 import com.android.example.textrecognitionlive.R
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -66,9 +61,6 @@ class MainFragment : Fragment(){
         // this can help differentiate the different contexts
         private const val REQUEST_CODE_PERMISSIONS = 10
 
-        var tokens = arrayListOf<Any>()
-        var labels = arrayListOf <Pair<Any, Any>>()
-
 
         // This is an array of all the permission specified in the manifest
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
@@ -85,7 +77,6 @@ class MainFragment : Fragment(){
     private lateinit var viewFinder: PreviewView
     private lateinit var overlay: SurfaceView
     private lateinit var recognizedTextV: TextView
-    private var db = Firebase.firestore
 
 
     private var flag = 1
@@ -137,9 +128,6 @@ class MainFragment : Fragment(){
                 displayId = viewFinder.display.displayId
 
                 val startBt = container.findViewById<Button>(R.id.start_button)
-                val fallBt = container.findViewById<Button>(R.id.fallback_button)
-                val confirmBt = container.findViewById<Button>(R.id.confirm_button1)
-
                 //val stopBt = container.findViewById<Button>(R.id.stop_button)
                 //stopBt.isEnabled = false
 
@@ -174,59 +162,10 @@ class MainFragment : Fragment(){
                             text = getString(R.string.start)
                         }
 
-                        Log.i(TAG, "thisonehere: $labels")
                         stopCamera()
                     }
                 }
 
-                fallBt.setOnClickListener {
-                    val intent = Intent(activity, FallBActivity::class.java)
-                    activity?.startActivity(intent)
-                }
-
-                confirmBt.setOnClickListener {
-
-                    stopCamera()
-
-                    startBt.apply{
-                        text = getString(R.string.start)
-                    }
-                    flag = 1
-
-                    val prodInArray = ImageAnalyzerMet.finalProduct.split(" ").toTypedArray()
-                    for(prod in prodInArray)
-                    {
-                        labels.add(Pair(prod, "Product"))
-                    }
-
-                    //labels.add(Pair(ImageAnalyzerMet.finalProduct, "Product"))
-                    labels.add(Pair(ImageAnalyzerMet.finalMRP, "MRP"))
-                    labels.add(Pair(ImageAnalyzerMet.finalMFG, "MfgDate"))
-                    labels.add(Pair(ImageAnalyzerMet.finalEXP, "ExpDate"))
-
-                    tokens = tokens.distinct() as ArrayList<Any>
-
-
-
-                    val data = hashMapOf(
-                        "labels" to labels,
-                        "tokens" to tokens
-                    )
-
-                    db.collection("data").add(data)
-                        .addOnSuccessListener {
-                            //Toast.makeText(this, "Successfully added!", Toast.LENGTH_SHORT).show()
-                            labels.clear()
-                            tokens.clear()
-
-                        }
-                        .addOnFailureListener{
-                            //Toast.makeText(this, "Failed!", Toast.LENGTH_SHORT).show()
-                        }
-
-                    Log.i(ContentValues.TAG, "labels: $labels")
-                    Log.i(ContentValues.TAG, "tokens: $tokens")
-                }
 
             }
         } else {
